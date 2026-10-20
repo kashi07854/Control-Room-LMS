@@ -3,3 +3,4 @@ gunicorn
 python-docx
 openpyxl
 schedule
+PyPDF2
