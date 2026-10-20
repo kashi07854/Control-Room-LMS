@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Control Room</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+<link href="{{ url_for('static', filename='css/app.css') }}" rel="stylesheet">
+</head>
+<body>
+<div class="app-layout">
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="brand d-flex align-items-center gap-2">
+      <div class="brand-icon"><i class="bi bi-layers-half"></i></div>
+      <span>Control Room</span>
+    </div>
+    
+    <div class="nav-section">Folders</div>
+    <nav class="nav-menu">
+      <a href="/" class="{{ 'active' if request.path=='/' }}"><i class="bi bi-grid-1x2"></i> Dashboard</a>
+      <a href="/browse" class="{{ 'active' if request.path=='/browse' }}"><i class="bi bi-folder2"></i> File Browser</a>
+      <a href="/search" class="{{ 'active' if request.path=='/search' }}"><i class="bi bi-search"></i> Search</a>
+      <a href="/progress" class="{{ 'active' if request.path=='/progress' }}"><i class="bi bi-bar-chart"></i> Progress</a>
+    </nav>
+
+    <div class="nav-section mt-4">Status</div>
+    <nav class="nav-menu">
+      <a href="/search?status=completed"><i class="bi bi-check-circle text-success"></i> Completed</a>
+      <a href="/search?status=in_progress"><i class="bi bi-hourglass-split text-warning"></i> In Progress</a>
+      <a href="/search?status=not_started"><i class="bi bi-circle text-secondary"></i> Not Started</a>
+    </nav>
+
+    <div class="sidebar-bottom mt-auto">
+      <a href="#" onclick="toggleTheme();return false;" class="theme-toggle"><i class="bi bi-moon-stars" id="themeIcon"></i> <span id="themeLabel">Dark Mode</span></a>
+      <a href="/settings" class="{{ 'active' if request.path=='/settings' }}"><i class="bi bi-gear"></i> Settings</a>
+      <div class="user-profile mt-3">
+        <div class="avatar bg-primary text-white">CR</div>
+        <div class="user-info">
+          <div class="name">Local User</div>
+          <div class="email">G:\My Drive</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="main-content">
+    <header class="topbar">
+      <div class="breadcrumbs text-muted fw-medium">
+        {% block breadcrumbs %}Workspace / Dashboard{% endblock %}
+      </div>
+      <div class="top-actions">
+        <div class="search-box">
+          <i class="bi bi-search"></i>
+          <input type="text" placeholder="Search files..." onkeyup="if(event.key==='Enter') window.location='/search?q='+this.value">
+        </div>
+        <button class="btn btn-outline-secondary btn-sm" onclick="startScan()"><i class="bi bi-arrow-clockwise"></i> Scan</button>
+        <button class="btn btn-primary btn-sm" onclick="toggleFilter()"><i class="bi bi-funnel"></i> Filters</button>
+      </div>
+    </header>
+    
+    <div class="content-body">
+      {% block body %}{% endblock %}
+    </div>
+  </main>
+
+  <!-- Right Side Filter Panel -->
+  <aside class="filter-panel" id="filterPanel">
+    <div class="filter-header">
+      <h5 class="mb-0">Filters</h5>
+      <button class="btn-close" onclick="toggleFilter()"></button>
+    </div>
+    <div class="filter-body">
+      <div class="filter-group">
+        <label>File Type</label>
+        <div class="form-check"><input class="form-check-input" type="checkbox" checked> <label class="form-check-label">Folders</label></div>
+        <div class="form-check"><input class="form-check-input" type="checkbox" checked> <label class="form-check-label">Files (PDF, DOCX)</label></div>
+      </div>
+      <div class="filter-group mt-4">
+        <label>Date Modified</label>
+        <select class="form-select form-select-sm mt-2">
+          <option>Any time</option>
+          <option>Last 24 hours</option>
+          <option>Last 7 days</option>
+          <option>Last 30 days</option>
+        </select>
+      </div>
+      <div class="filter-group mt-4">
+        <label>Course/Unit</label>
+        <input type="text" class="form-control form-control-sm mt-2" placeholder="e.g. English">
+      </div>
+      <button class="btn btn-primary w-100 mt-4" onclick="toggleFilter()">Apply Filters</button>
+    </div>
+  </aside>
+</div>
+
+  <!-- Command Palette Modal -->
+  <div id="commandPalette" class="command-palette-overlay" style="display:none;">
+    <div class="command-palette-box">
+      <div class="cp-input-wrapper">
+        <i class="bi bi-search"></i>
+        <input type="text" id="cpInput" placeholder="Search files, courses, or type a command..." autocomplete="off">
+        <span class="cp-shortcut">ESC</span>
+      </div>
+      <div class="cp-results" id="cpResults">
+        <div class="cp-empty">Type to start searching...</div>
+      </div>
+      <div class="cp-footer">
+        <span><i class="bi bi-arrow-up-short"></i><i class="bi bi-arrow-down-short"></i> to navigate</span>
+        <span><i class="bi bi-arrow-return-left"></i> to select</span>
+        <span><i class="bi bi-x-lg"></i> to close</span>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>

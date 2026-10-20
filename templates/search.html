@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block body %}
+<h1>Search</h1>
+<form class="row g-2 mb-4" method="get">
+  <div class="col-md-6"><input type="text" name="q" value="{{ q }}" class="form-control" placeholder="Search filenames and paths..." autofocus></div>
+  <div class="col-md-2">
+    <select name="type" class="form-select">
+      <option value="">All types</option>
+      <option value="file"   {{ 'selected' if type_filter=='file' }}>Files</option>
+      <option value="folder" {{ 'selected' if type_filter=='folder' }}>Folders</option>
+    </select>
+  </div>
+  <div class="col-md-2">
+    <select name="status" class="form-select">
+      <option value="">Any status</option>
+      <option value="not_started" {{ 'selected' if status_filter=='not_started' }}>Not Started</option>
+      <option value="in_progress" {{ 'selected' if status_filter=='in_progress' }}>In Progress</option>
+      <option value="completed"   {{ 'selected' if status_filter=='completed' }}>Completed</option>
+    </select>
+  </div>
+  <div class="col-md-2"><button class="btn btn-primary w-100">Search</button></div>
+</form>
+
+{% if results %}
+<p class="text-secondary small">{{ results|length }} result(s)</p>
+<table class="table table-sm table-hover">
+  <thead><tr><th>Name</th><th>Path</th><th>Type</th><th>Status</th></tr></thead>
+  <tbody>
+    {% for r in results %}
+    <tr>
+      <td>
+        {% if r.item_type=='folder' %}<a href="/browse?path={{ r.rel_path|urlencode }}">{{ r.name }}</a>
+        {% else %}<a href="/unit/{{ r.id }}">{{ r.name }}</a>{% endif %}
+      </td>
+      <td class="small text-secondary">{{ r.rel_path }}</td>
+      <td class="small">{{ r.item_type }}</td>
+      <td><span class="badge {{ 'bg-success' if r.status=='completed' else 'bg-warning text-dark' if r.status=='in_progress' else 'bg-secondary' }}">{{ r.status }}</span></td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% elif q %}<div class="alert alert-info">No results for "{{ q }}".</div>{% endif %}
+{% endblock %}

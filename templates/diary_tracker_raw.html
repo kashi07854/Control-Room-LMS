@@ -1,0 +1,714 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>MYLIFE OS — Diary & Life Tracker</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#06080f;--card:rgba(255,255,255,.04);--bd:rgba(255,255,255,.09);--tx:#e8edf7;--mut:#8b97ad;--a1:#7c5cff;--a2:#22d3ee;--good:#34d399;--warn:#fbbf24;--bad:#fb7185}
+body{background:radial-gradient(1200px 800px at 12% -10%,rgba(124,92,255,.2),transparent 60%),radial-gradient(1000px 700px at 98% 0%,rgba(34,211,238,.13),transparent 55%),var(--bg);color:var(--tx);font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;min-height:100vh;-webkit-font-smoothing:antialiased}
+body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;background-image:linear-gradient(rgba(255,255,255,.02) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.02) 1px,transparent 1px);background-size:52px 52px;mask-image:radial-gradient(circle at 50% 0%,#000,transparent 78%)}
+.app{display:grid;grid-template-columns:252px 1fr;min-height:100vh;position:relative;z-index:1}
+.sidebar{position:sticky;top:0;height:100vh;overflow-y:auto;padding:18px 14px;border-right:1px solid var(--bd);background:linear-gradient(180deg,rgba(10,13,23,.85),rgba(6,8,15,.7));backdrop-filter:blur(18px);z-index:40}
+.sidebar::-webkit-scrollbar{width:6px}.sidebar::-webkit-scrollbar-thumb{background:rgba(255,255,255,.12);border-radius:8px}
+.brand{display:flex;align-items:center;gap:10px;padding:8px 10px 16px}
+.logo{width:38px;height:38px;border-radius:12px;display:grid;place-items:center;font-size:19px;background:linear-gradient(135deg,var(--a1),var(--a2));box-shadow:0 8px 26px -8px rgba(124,92,255,.9)}
+.brand b{display:block;font-size:14px;letter-spacing:.14em}
+.brand span{display:block;font-size:10px;color:var(--mut);letter-spacing:.18em;text-transform:uppercase}
+.nav{display:flex;flex-direction:column;gap:3px}
+.nav-group{font-size:10px;letter-spacing:.16em;color:#5b6579;text-transform:uppercase;font-weight:700;padding:14px 12px 6px}
+.nav a{display:flex;align-items:center;gap:11px;padding:9px 12px;border-radius:12px;color:var(--mut);text-decoration:none;font-size:13.5px;font-weight:500;cursor:pointer;border:1px solid transparent;transition:.16s;user-select:none}
+.nav a i{font-style:normal;width:18px;text-align:center;font-size:14px}
+.nav a:hover{background:rgba(255,255,255,.05);color:var(--tx)}
+.nav a.active{color:#fff;border-color:rgba(124,92,255,.4);background:linear-gradient(90deg,rgba(124,92,255,.28),rgba(34,211,238,.08));box-shadow:0 0 26px -10px rgba(124,92,255,.95)}
+.side-foot{margin-top:18px;padding:12px;border-radius:14px;border:1px solid var(--bd);background:var(--card)}
+.side-foot p{font-size:11px;color:var(--mut);line-height:1.6}
+.side-foot b{color:var(--tx);font-size:12px}
+.main{min-width:0;display:flex;flex-direction:column}
+.topbar{position:sticky;top:0;z-index:30;display:flex;align-items:center;gap:12px;padding:14px 26px;border-bottom:1px solid var(--bd);background:rgba(6,8,15,.72);backdrop-filter:blur(18px)}
+.crumb{font-size:14px;font-weight:600}
+.crumb small{display:block;font-size:11px;color:var(--mut);font-weight:400}
+.spacer{flex:1}
+.clock{font-size:12.5px;color:var(--mut);font-variant-numeric:tabular-nums;text-align:right;line-height:1.45}
+.clock b{color:var(--tx);font-size:13.5px;display:block}
+.icon-btn{width:36px;height:36px;border-radius:11px;display:grid;place-items:center;cursor:pointer;background:var(--card);border:1px solid var(--bd);color:var(--tx);font-size:14px;transition:.16s}
+.icon-btn:hover{background:rgba(255,255,255,.06);border-color:rgba(124,92,255,.5)}
+#menuBtn{display:none}
+#view{padding:26px;max-width:1500px;width:100%;margin:0 auto;animation:fade .32s ease}
+@keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.hero{border-radius:22px;padding:26px 28px;margin-bottom:20px;position:relative;overflow:hidden;border:1px solid var(--bd);background:linear-gradient(120deg,rgba(124,92,255,.22),rgba(34,211,238,.10) 55%,rgba(255,255,255,.03))}
+.hero::after{content:"";position:absolute;right:-60px;top:-80px;width:280px;height:280px;border-radius:50%;background:radial-gradient(circle,rgba(124,92,255,.45),transparent 70%);filter:blur(10px)}
+.hero h1{font-size:26px;letter-spacing:-.02em;margin-bottom:6px}
+.hero h1 em{font-style:normal;background:linear-gradient(90deg,#a78bfa,#22d3ee);-webkit-background-clip:text;background-clip:text;color:transparent}
+.hero p{color:#b7c1d6;font-size:13.5px}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
+.chip{font-size:11.5px;padding:6px 12px;border-radius:999px;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.06);color:#dbe3f2;font-weight:500}
+.card{background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,.018));border:1px solid var(--bd);border-radius:16px;padding:18px}
+.card+.card{margin-top:16px}
+.card-h{display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap}
+.card-h h3{font-size:14px;font-weight:650}
+.card-h .tag{margin-left:auto;font-size:11px;color:var(--mut)}
+.grid2{display:grid;grid-template-columns:1.35fr 1fr;gap:16px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(178px,1fr));gap:14px;margin-bottom:16px}
+.stat{border:1px solid var(--bd);border-radius:16px;padding:15px 16px;position:relative;overflow:hidden;background:linear-gradient(160deg,rgba(255,255,255,.06),rgba(255,255,255,.015));transition:.2s}
+.stat:hover{transform:translateY(-2px);border-color:rgba(124,92,255,.45);box-shadow:0 14px 34px -22px rgba(124,92,255,.9)}
+.stat .lb{font-size:11px;color:var(--mut);letter-spacing:.05em;text-transform:uppercase;font-weight:600}
+.stat .vl{font-size:25px;font-weight:750;margin-top:8px;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.stat .sb{font-size:11px;color:var(--mut);margin-top:5px}
+.stat .em{position:absolute;right:12px;top:12px;font-size:17px;opacity:.85}
+.bar{height:7px;border-radius:99px;background:rgba(255,255,255,.08);overflow:hidden;margin-top:9px}
+.bar i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,var(--a1),var(--a2));transition:width .5s}
+.bar.g i{background:linear-gradient(90deg,#34d399,#22d3ee)}
+.bar.w i{background:linear-gradient(90deg,#fbbf24,#f97316)}
+.bar.r i{background:linear-gradient(90deg,#fb7185,#f43f5e)}
+table{width:100%;border-collapse:separate;border-spacing:0}
+th{font-size:10.5px;text-transform:uppercase;letter-spacing:.09em;color:var(--mut);font-weight:700;text-align:left;padding:9px 10px;white-space:nowrap}
+td{padding:7px 10px;border-top:1px solid rgba(255,255,255,.055);font-size:13.2px;vertical-align:middle}
+tbody tr:hover{background:rgba(255,255,255,.028)}
+.tbl-wrap{overflow-x:auto}
+td.c,th.c{text-align:center}
+.rowlab{color:#c9d3e6;font-weight:500;white-space:nowrap;font-size:13px}
+.muted{color:var(--mut);font-size:12.5px}
+.pill{display:inline-block;font-size:10.5px;font-weight:700;padding:3px 9px;border-radius:999px;letter-spacing:.04em;white-space:nowrap}
+.pill.ok{background:rgba(52,211,153,.16);color:#6ee7b7;border:1px solid rgba(52,211,153,.3)}
+.pill.mid{background:rgba(251,191,36,.15);color:#fcd34d;border:1px solid rgba(251,191,36,.3)}
+.pill.low{background:rgba(251,113,133,.15);color:#fda4af;border:1px solid rgba(251,113,133,.3)}
+.pill.none{background:rgba(255,255,255,.06);color:#94a3b8;border:1px solid rgba(255,255,255,.12)}
+.chk{width:26px;height:26px;border-radius:9px;border:1px solid rgba(255,255,255,.15);background:rgba(255,255,255,.03);color:#fff;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;font-size:13px;line-height:1;transition:.15s;padding:0}
+.chk:hover{border-color:rgba(124,92,255,.7);background:rgba(124,92,255,.18);transform:scale(1.06)}
+.chk.on{background:linear-gradient(135deg,var(--a1),var(--a2));border-color:transparent;box-shadow:0 0 16px -3px rgba(124,92,255,.95)}
+.chk.sm{width:22px;height:22px;border-radius:7px;font-size:11px}
+.inp{width:100%;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);color:var(--tx);border-radius:9px;padding:7px 10px;font-size:13px;font-family:inherit;transition:.16s;outline:none}
+.inp:focus{border-color:rgba(124,92,255,.75);background:rgba(124,92,255,.09);box-shadow:0 0 0 3px rgba(124,92,255,.13)}
+.inp.num{text-align:right;font-variant-numeric:tabular-nums}
+textarea.inp{resize:vertical;min-height:76px;line-height:1.6;font-family:inherit}
+.inp::placeholder{color:#5d6879}
+.pomo{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.pomo .t{font-size:34px;font-weight:750;font-variant-numeric:tabular-nums;background:linear-gradient(90deg,#a78bfa,#22d3ee);-webkit-background-clip:text;background-clip:text;color:transparent}
+.btn{border:1px solid var(--bd);background:var(--card);color:var(--tx);border-radius:11px;padding:9px 15px;font-size:12.5px;font-weight:600;cursor:pointer;transition:.16s;font-family:inherit}
+.btn:hover{background:rgba(255,255,255,.06);border-color:rgba(124,92,255,.55)}
+.btn.primary{background:linear-gradient(135deg,var(--a1),var(--a2));border-color:transparent;color:#fff;box-shadow:0 10px 26px -14px rgba(124,92,255,1)}
+.btn.danger{border-color:rgba(251,113,133,.45);color:#fda4af}
+.btn.danger:hover{background:rgba(251,113,133,.15)}
+.tree{max-height:520px;overflow:auto;padding-right:6px}
+.tree::-webkit-scrollbar{width:7px}.tree::-webkit-scrollbar-thumb{background:rgba(255,255,255,.12);border-radius:8px}
+.tree-row{display:flex;align-items:center;gap:8px;padding:5px 10px;border-radius:8px;font-size:13px;color:#c8d2e4;transition:.13s}
+.tree-row:hover{background:rgba(124,92,255,.13);color:#fff}
+.tree-row .lv{font-size:9.5px;font-weight:800;color:#5f6b81;background:rgba(255,255,255,.05);border-radius:5px;padding:1px 5px}
+.kv{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.055);font-size:13px}
+.kv:last-child{border-bottom:none}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(90px);background:linear-gradient(135deg,rgba(124,92,255,.95),rgba(34,211,238,.9));color:#fff;padding:11px 22px;border-radius:12px;font-size:13px;font-weight:600;z-index:200;transition:transform .32s;box-shadow:0 18px 40px -18px rgba(0,0,0,.9)}
+.toast.show{transform:translateX(-50%) translateY(0)}
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:39;backdrop-filter:blur(3px)}
+.jtabs{display:flex;gap:6px;margin-bottom:16px;padding:4px;background:var(--card);border:1px solid var(--bd);border-radius:12px;overflow-x:auto}
+.jtab{flex:1;padding:10px 16px;border-radius:9px;border:none;background:transparent;color:var(--mut);font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap;transition:.16s;min-width:130px}
+.jtab:hover{color:var(--tx);background:rgba(255,255,255,.04)}
+.jtab.active{background:linear-gradient(135deg,var(--a1),var(--a2));color:#fff;box-shadow:0 4px 14px -6px rgba(124,92,255,.8)}
+#diaryPreview{font-family:'Georgia','Times New Roman',serif;line-height:1.85;color:#e8edf7;font-size:14px}
+.diary-header{text-align:center;margin-bottom:22px;padding-bottom:16px;border-bottom:2px solid rgba(124,92,255,.28)}
+.diary-header .lbl{font-size:10.5px;color:#8b97ad;letter-spacing:.22em;text-transform:uppercase;margin-bottom:8px;font-family:ui-sans-serif,sans-serif}
+.diary-header .d{font-size:20px;font-weight:700;color:#fff}
+.diary-section{margin-bottom:20px}
+.diary-section .hdr{font-size:11.5px;color:#a78bfa;font-weight:700;margin-bottom:8px;letter-spacing:.06em;text-transform:uppercase;font-family:ui-sans-serif,sans-serif}
+.diary-section .txt{color:#c9d3e6;white-space:pre-wrap}
+.diary-section .grat{color:#c9d3e6}
+.diary-section .grat div{margin-bottom:4px}
+.diary-empty{text-align:center;color:#5d6879;padding:40px 20px;font-family:ui-sans-serif,sans-serif;font-size:13px}
+.diary-empty .ico{font-size:42px;margin-bottom:14px;opacity:.5}
+@media(max-width:1050px){.grid2,.grid3{grid-template-columns:1fr}}
+@media(max-width:880px){.app{grid-template-columns:1fr}.sidebar{position:fixed;left:0;top:0;width:252px;transform:translateX(-102%);transition:transform .28s}.sidebar.open{transform:none}.overlay.show{display:block}#menuBtn{display:grid}#view{padding:18px 14px}.topbar{padding:12px 14px}.hero h1{font-size:21px}}
+</style>
+</head>
+<body>
+<div class="app">
+<aside class="sidebar" id="sidebar">
+<div class="brand"><div class="logo">📔</div><div><b>MYLIFE OS</b><span>Diary & Tracker</span></div></div>
+<nav class="nav" id="nav"></nav>
+<div class="side-foot"><p><b>CEO: YOU</b><br>Year 2026 · v2.0<br>Auto-saved locally.</p></div>
+</aside>
+<main class="main">
+<header class="topbar">
+<button class="icon-btn" id="menuBtn">☰</button>
+<div class="crumb" id="crumb">Dashboard<small id="crumbSub">Overview</small></div>
+<div class="spacer"></div>
+<div class="clock" id="clock"></div>
+<button class="icon-btn" id="downloadPdfBtn" title="Download PDF Report" style="color:#f43f5e; border-color:rgba(244,63,94,0.3);">📄</button>
+<button class="icon-btn" id="exportBtn" title="Export all data">⬇</button>
+<button class="icon-btn" id="importBtn" title="Import data">⬆</button>
+<input type="file" id="fileIn" accept=".json" hidden/>
+</header>
+<div id="view"></div>
+</main>
+</div>
+<div class="overlay" id="overlay"></div>
+<div class="toast" id="toast"></div>
+
+<script>
+const KEY='mylifeos.v2';
+let state={};
+try{state=JSON.parse(localStorage.getItem(KEY))||{}}catch(e){state={}}
+try{const old=localStorage.getItem('lifeos.v1');if(old&&!localStorage.getItem(KEY)){state=JSON.parse(old)||{};localStorage.setItem(KEY,JSON.stringify(state))}}catch(e){}
+if(state.journal&&!state.journal.entries){
+  const today=new Date().toISOString().slice(0,10);
+  const old={};
+  ['morning','acc','learn','evening','notes'].forEach(k=>{if(state.journal[k])old[k]=state.journal[k]});
+  if(state.journal.grat){for(let i=1;i<=5;i++){if(state.journal.grat[i])old['grat'+i]=state.journal.grat[i]}}
+  if(Object.keys(old).length>0){state.journal={entries:{[today]:old}}}
+}
+function g(p){return p.split('.').reduce((o,k)=>o==null?undefined:o[k],state)}
+let _st;function s(p,v){const ks=p.split('.');let o=state;for(let i=0;i<ks.length-1;i++){if(o[ks[i]]==null||typeof o[ks[i]]!=='object')o[ks[i]]={};o=o[ks[i]]}o[ks[ks.length-1]]=v;clearTimeout(_st);_st=setTimeout(()=>{try{localStorage.setItem(KEY,JSON.stringify(state))}catch(e){}},180)}
+function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove('show'),1900)}
+function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function trunc(s,n){if(!s)return '—';return s.length>n?s.slice(0,n)+'…':s}
+
+const DAYS=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];const DOW=(new Date().getDay()+6)%7;
+const HABITS=[['🌅','Wake at 6 AM'],['🎤','Voice Exercise'],['💪','Exercise 30 min'],['📘','Knowledge 1 hr'],['🌐','Language 30 min'],['🎓','College Study'],['🛠️','Skill Practice'],['💼','Office Work'],['💧','8 Glasses Water'],['📝','Journal Writing'],['📚','Read 30 min'],['🧘','Meditation'],['😴','Sleep by 10 PM'],['📵','No Phone after 9']];
+const SCHEDULE=[['06:00','🌅 Wake Up'],['06:30','🎤 Voice'],['07:00','💪 Exercise'],['07:30','📘 Knowledge'],['08:00','🍳 Breakfast'],['08:30','🌐 Language'],['09:00','☕ Break'],['10:00','🎓 College'],['12:00','🍽️ Lunch'],['13:00','🔄 Revision'],['15:00','🛠️ Skill Dev'],['16:30','💼 Office'],['18:00','🚶 Walk'],['19:00','🎓 College 3'],['20:00','📝 Journal'],['21:00','📊 Review'],['22:00','😴 Sleep']];
+const WATER_TIMES=['06:00','08:00','10:00','12:00','14:00','16:00','18:00','20:00'];
+const SUBJECTS=['Business Statistics','Business Communication','Management Foundation','Accounting Fundamentals','Principles of Marketing','Business Plan Trailblazers','Free Certificate Courses','Student Dev Programme','Live Class – Business Comm','Weekly Pulse','Study Track Update'];
+const REV_SUBJECTS=['Business Statistics','Business Communication','Management Foundation','Accounting Fundamentals','Principles of Marketing','Knowledge Reading','English Grammar','Japanese Vocab','Excel Skills','SQL Queries','Python Basics','DSA Problems','Voice Practice'];
+const MODULES=['🐍 Python','🗄️ SQL','📊 Excel','🌐 English Grammar','✍️ English Writing','🎤 Soft Skills','🧠 Problem Solving','🎓 Amity Online','🇯🇵 Japanese','💼 Career Plan','💰 Income','📱 Social Media','📖 Book Reading','⌨️ Typing','💪 Exercise'];
+const LANGS=['🇬🇧 English Advanced','🇯🇵 Japanese','🇪🇸 Spanish','🇫🇷 French','🇩🇪 German','🇰🇷 Korean','🇨🇳 Mandarin'];
+const TECHNIQUES=[['🍅','Pomodoro','25 min focus + 5 min break'],['🔁','Spaced Repetition','Review at increasing intervals'],['📝','Feynman Technique','Explain simply to understand deeply'],['🧠','Active Recall','Test yourself instead of re-reading'],['📊','Mind Mapping','Visual diagram of concepts'],['🔗','Interleaving','Mix different topics in one session']];
+const SUPPLEMENTS=[['💪','Whey Protein','1 scoop','Post-Workout'],['🍚','Mass Gainer','2 scoops','Between meals'],['💊','Multivitamin','1 tablet','After breakfast'],['🐟','Omega-3','1 capsule','After dinner'],['⚡','Creatine','5g','Pre-workout'],['☀️','Vitamin D3','1 tablet','After breakfast']];
+const WORKOUT=[['Monday','Chest + Triceps','6:00–7:30 AM','Banana + PB','Whey + Milk'],['Tuesday','Back + Biceps','6:00–7:30 AM','Banana + Dates','Egg Shake'],['Wednesday','Legs + Abs','6:00–7:30 AM','Oats + Honey','Mass Gainer'],['Thursday','Shoulders + Arms','6:00–7:30 AM','Banana + PB','Whey + Milk'],['Friday','Chest + Back','6:00–7:30 AM','Dates + Milk','Protein Smoothie'],['Saturday','Full Body + Cardio','7:00–8:30 AM','Banana Shake','Whey + Banana'],['Sunday','REST','—','Normal','Normal']];
+const MEALS=['🍳 Breakfast','🍎 Mid-Morning','🍱 Lunch','🥗 Snack','🍽️ Dinner','🥛 Bedtime'];
+const MEAL_PLAN={'🍳 Breakfast':['Oats + Milk','Poha','Upma','Paratha','Idli + Sambar','Dosa','Puri'],'🍎 Mid-Morning':['Fruit Bowl','Banana + Nuts','Apple','Orange','Papaya','Watermelon','Guava'],'🍱 Lunch':['Dal + Rice','Roti + Sabzi','Rajma + Rice','Chole + Roti','Kadhi + Rice','Biryani','Pulao'],'🥗 Snack':['Sprouts','Samosa','Sandwich','Pakoda','Bhel Puri','Dhokla','Vada'],'🍽️ Dinner':['Roti + Paneer','Khichdi','Roti + Dal','Fried Rice','Noodles','Pizza','Pasta'],'🥛 Bedtime':['Warm Milk','Turmeric Milk','Warm Milk','Warm Milk','Turmeric Milk','Warm Milk','Warm Milk']};
+const CAL_DEFAULT={'🍳 Breakfast':[350,320,400,380,420,450,380],'🍎 Mid-Morning':[150,180,120,160,140,200,150],'🍱 Lunch':[600,550,650,580,620,700,600],'🥗 Snack':[200,250,180,220,240,280,200],'🍽️ Dinner':[500,480,550,520,540,600,500],'🥛 Bedtime':[150,150,150,150,150,150,150]};
+const GROCERY=[['Rice','Grains',5,80],['Wheat Flour','Grains',5,45],['Dal (Toor)','Pulses',2,120],['Dal (Moong)','Pulses',1,110],['Rajma','Pulses',1,130],['Milk','Dairy',5,60],['Curd','Dairy',2,80],['Paneer','Dairy',0.5,350],['Ghee','Dairy',0.5,550],['Tomato','Veg',2,40],['Onion','Veg',3,30],['Potato','Veg',2,25],['Banana','Fruits',1,50],['Apple','Fruits',1,180],['Eggs','Protein',1,80],['Oil','Cooking',1,140],['Salt','Spices',1,25],['Sugar','Spices',1,45]];
+const LOANS=[['🎓 Education Loan',200000,5000,48],['💻 Laptop EMI',50000,2000,24],['📱 Phone EMI',30000,1500,18]];
+const CEO_SKILLS=[['🧠 Strategic','Vision Setting'],['🧠 Strategic','Long-Term Planning'],['🧠 Strategic','Systems Thinking'],['👥 Leadership','Vision Communication'],['👥 Leadership','Delegation'],['👥 Leadership','Motivation'],['💬 Communication','Public Speaking'],['💬 Communication','Writing'],['💬 Communication','Negotiation'],['💰 Financial','Financial Literacy'],['💰 Financial','Budgeting'],['🎯 Decision','Critical Thinking'],['🎯 Decision','Data-Driven'],['🚀 Execution','Goal Setting'],['🚀 Execution','Time Management'],['🚀 Execution','Focus/Deep Work'],['🧘 Personal','Self-Awareness'],['🧘 Personal','Discipline'],['🤝 People','Networking'],['🤝 People','Team Building'],['🔧 Technical','Data Analytics'],['🔧 Technical','AI Awareness']];
+const BOOKS=[['The 5 Second Rule','Mel Robbins','Fear + Action'],['The Charisma Myth','Olivia Fox Cabane','Voice + Presence'],['Talk Like TED','Carmine Gallo','Public Speaking'],['Atomic Habits','James Clear','Habit Building'],['Deep Work','Cal Newport','Focus'],['7 Habits of Highly Effective People','Stephen Covey','Leadership'],['Zero to One','Peter Thiel','Strategy'],['The Lean Startup','Eric Ries','Execution'],['Thinking, Fast and Slow','Daniel Kahneman','Decision Making'],['The Intelligent Investor','Benjamin Graham','Finance'],['Rich Dad Poor Dad','Robert Kiyosaki','Financial Literacy'],['How to Win Friends','Dale Carnegie','People Skills'],['Never Split the Difference','Chris Voss','Negotiation'],['Principles','Ray Dalio','Life + Work'],['The Almanack of Naval Ravikant','Eric Jorgenson','Wealth + Happiness']];
+const AFFIRMATIONS=['👑 I am the CEO of my life','🎯 I make decisions with confidence','💪 I embrace challenges','🧠 I learn from every failure','❤️ I lead with empathy','🚀 I execute with discipline','💰 I manage wealth wisely','🧘 I stay calm under pressure','📚 I learn something new every day','🔥 I refuse to give up'];
+const MGOALS=[['🎓 College','Complete 5 subjects',5,4],['📘 Knowledge','Read 4 books',4,2],['🌐 Language','Learn 650 words',650,400],['🛠️ Skill','Build 3 projects',3,1],['📊 Excel','40 tasks',40,20],['🗄️ SQL','80 queries',80,45],['🐍 Python','20 topics',20,12],['💪 Health','Gain 2 kg',2,1],['💰 Finance','Save ₹22,000',22000,12000],['🔥 Habit','31-day streak',31,18]];
+const YGOALS=[['🎓 Education','Complete MBA 1st Year',2],['📚 Books','Read 24 books',24],['💰 Finance','Save ₹2,00,000',200000],['💪 Health','Gain 8 kg',8],['🛠️ Skills','Master 10 skills',10],['🌐 Language','Learn Japanese N5',1],['🎤 Voice','Speak confidently',1],['📈 Career','Get internship',1],['🏆 Projects','Build 12 projects',12],['✈️ Travel','Take 3 trips',3]];
+const MHABITS=['🌅 Wake 6 AM','💪 Exercise','📘 Knowledge','🌐 Language','🎓 College','🛠️ Skill','💼 Office','📝 Journal','💧 Water','😴 Sleep 10PM','📵 No Phone','🧘 Meditation','📖 Reading','🍎 Fruits','🚶 Walk','💰 Expenses'];
+const FOLDERS=[[1,'02 languages'],[2,'01 english'],[3,'01 advance english'],[4,'01 speaking'],[4,'02 writing'],[3,'classes'],[4,'02 UC LIVE CLASSES'],[2,'05 japanese'],[3,'05 books and resources'],[4,'01 hiragana'],[1,'03 problem solving'],[2,'01 🧩 introduction to problem solving'],[2,'02 🔎 problem identification'],[1,'04 skill dev'],[2,'01 data and analytics'],[3,'01 excel'],[4,'01 notes and theory'],[4,'02 practice and projects'],[4,'04 lookup functions'],[4,'05 data cleaning'],[4,'07 raw data'],[4,'08 data analysis projects'],[4,'09 pivot tables'],[4,'10 power query'],[3,'02 sql'],[4,'01 notes and theory'],[4,'02 practice and projects'],[4,'17 PostgreSQL'],[3,'03 python'],[4,'01 notes and theory'],[4,'Python-for-Data-Analysis'],[3,'04 power bi'],[4,'PowerBI Course'],[3,'05 ai tools for analytics'],[3,'06 data structures and algorithms'],[4,'00 Foundation'],[4,'01 Arrays'],[4,'02 Strings'],[4,'03 Linked List'],[4,'04 Stack'],[4,'05 Queue'],[4,'06 Hashing'],[4,'07 Searching'],[4,'08 Sorting'],[4,'09 Recursion Backtracking'],[4,'10 Trees'],[4,'11 Heap'],[4,'12 Graphs'],[4,'13 Greedy'],[4,'14 Dynamic Programming'],[4,'15 Advanced Data Structures'],[4,'16 Problem Solving'],[4,'17 Projects'],[2,'02 ai and automation'],[3,'01 artificial intelligence'],[4,'Week 41'],[4,'Week 42'],[4,'Week 43'],[4,'Week 44'],[4,'Week 45'],[4,'Week 46'],[4,'Week 47'],[3,'02 prompt engineering'],[3,'03 automation and no code tools'],[4,'01 notes and theory'],[2,'03 tech and engineering'],[3,'01 computer basics'],[4,'01 notes and theory'],[3,'02 git and github'],[3,'03 cloud basics'],[3,'04 cyber security and networking'],[3,'05 web development basics'],[3,'06 system design and architecture'],[3,'07 devops and docker basics'],[3,'08 blockchain and web3 fundamentals'],[2,'04 creative and media'],[3,'01 video editing'],[4,'01 notes and theory'],[3,'02 copywriting and content creation'],[3,'03 graphic design and canva figma'],[3,'04 ui ux design principles'],[3,'5 Health Food'],[2,'05 business and career'],[3,'01 job applications'],[3,'02 personal finance and investing'],[3,'03 project management'],[3,'04 product management essentials'],[3,'05 e commerce and digital store'],[2,'06 mindset and productivity'],[3,'01 reasoning and problem solving'],[3,'02 notion and drive sync'],[3,'03 public speaking and pitching'],[3,'04 time management and productivity systems'],[3,'05 mental models and strategic thinking'],[2,'06 mindset productivity'],[3,'01 understanding mindset productivity'],[3,'02 goal setting mental clarity'],[3,'03 focus concentration'],[3,'04 distraction management'],[3,'05 time management'],[3,'06 task management prioritization'],[3,'07 energy management'],[3,'08 breaking big tasks into small tasks'],[3,'09 procrastination management'],[3,'10 habits routines'],[3,'11 memory information management'],[3,'12 critical thinking'],[3,'13 decision making'],[3,'14 stress mental overload management'],[3,'15 multitasking single tasking'],[3,'16 daily weekly planning'],[3,'17 productivity tracking review'],[3,'18 continuous improvement'],[3,'19 personal productivity system'],[3,'20 mastering mindset productivity'],[2,'08 management'],[3,'decision management'],[3,'digital management'],[3,'financial management'],[3,'knowledge management'],[3,'people management'],[3,'professional management'],[3,'project management'],[3,'resource management'],[3,'self management'],[3,'study management'],[3,'task management'],[1,'05 soft skills'],[2,'01 business and soft skills'],[3,'20 Chapters (Business & Soft Skills)'],[2,'02 pitching and public speaking'],[3,'20 Chapters (Pitching & Public Speaking)'],[2,'03 networking and relationship building'],[3,'20 Chapters (Networking)'],[2,'04 influence and psychology'],[2,'05 templates decks and frameworks'],[3,'20 Chapters (Templates & Frameworks)']];
+
+const chk=(p,cls='')=>`<button class="chk ${cls}" data-k="${p}">${g(p)?'✓':''}</button>`;
+const inp=(p,ph='',extra='')=>`<input class="inp" data-k="${p}" placeholder="${ph}" value="${esc(g(p)??'')}" ${extra}/>`;
+const num=(p,ph='0',extra='')=>`<input class="inp num" type="number" data-k="${p}" placeholder="${ph}" value="${g(p)??''}" ${extra}/>`;
+const ta=(p,ph='',rows=3)=>`<textarea class="inp" data-k="${p}" rows="${rows}" placeholder="${ph}">${esc(g(p)??'')}</textarea>`;
+const bar=(pct,cls='')=>`<div class="bar ${cls}"><i style="width:${Math.max(0,Math.min(100,pct*100)).toFixed(1)}%"></i></div>`;
+const fmtINR=n=>'₹'+(Number(n)||0).toLocaleString('en-IN');
+const pctText=p=>(Math.max(0,Math.min(1,p))*100).toFixed(0)+'%';
+const statusPill=p=>p>=0.9?'<span class="pill ok">🟢 Done</span>':p>=0.7?'<span class="pill mid">🟡 Good</span>':p>0?'<span class="pill low">🔴 Progress</span>':'<span class="pill none">⚪ Not Started</span>';
+
+function weekGrid(base,rows,cols,labels,showTot=false){let h=`<div class="tbl-wrap"><table><thead><tr><th style="width:230px">Item</th>`;labels.forEach(c=>h+=`<th class="c">${c}</th>`);if(showTot)h+=`<th class="c">Total</th>`;h+=`</tr></thead><tbody>`;rows.forEach((r,i)=>{h+=`<tr><td class="rowlab">${r}</td>`;for(let j=0;j<cols;j++)h+=`<td class="c">${chk(`${base}.${i}.${j}`,'sm')}</td>`;if(showTot){let c=0;for(let j=0;j<cols;j++)if(g(`${base}.${i}.${j}`))c++;h+=`<td class="c"><b>${c}</b></td>`}h+=`</tr>`});return h+`</tbody></table></div>`}
+function countCol(base,rows,col){let c=0;for(let i=0;i<rows;i++)if(g(`${base}.${i}.${col}`))c++;return c}
+function sumField(base,n,f){let t=0;for(let i=0;i<n;i++)t+=Number(g(`${base}.${i}.${f}`))||0;return t}
+
+function todayISO(){return new Date().toISOString().slice(0,10)}
+function getISOWeek(dateStr){
+  const d=new Date(dateStr+'T00:00:00');
+  const target=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate()));
+  const dayNum=target.getUTCDay()||7;
+  target.setUTCDate(target.getUTCDate()+4-dayNum);
+  const yearStart=new Date(Date.UTC(target.getUTCFullYear(),0,1));
+  const weekNo=Math.ceil((((target-yearStart)/86400000)+1)/7);
+  return `${target.getUTCFullYear()}-W${String(weekNo).padStart(2,'0')}`;
+}
+function getWeekRange(weekKey){
+  const [year,week]=weekKey.split('-W').map(Number);
+  const jan4=new Date(Date.UTC(year,0,4));
+  const jan4Day=jan4.getUTCDay()||7;
+  const monday=new Date(jan4);
+  monday.setUTCDate(jan4.getUTCDate()-(jan4Day-1)+(week-1)*7);
+  const sunday=new Date(monday);sunday.setUTCDate(monday.getUTCDate()+6);
+  const fmt=d=>d.toLocaleDateString('en-GB',{day:'2-digit',month:'short'});
+  return `${fmt(monday)} – ${fmt(sunday)} ${sunday.getFullYear()}`;
+}
+function renderDiaryPreview(date){
+  const e=g(`journal.entries.${date}`)||{};
+  const d=new Date(date+'T00:00:00');
+  const dateStr=d.toLocaleDateString('en-GB',{weekday:'long',day:'2-digit',month:'long',year:'numeric'});
+  const gratLines=[];for(let i=1;i<=5;i++){const t=e['grat'+i];if(t)gratLines.push(t)}
+  const hasContent=e.morning||e.acc||e.learn||gratLines.length||e.evening||e.notes;
+  if(!hasContent){
+    return `<div class="diary-empty"><div class="ico">📔</div><p>Start typing to see your diary preview here...</p><p style="margin-top:6px;font-size:11.5px">Your entry will auto-format like a real diary.</p></div>`;
+  }
+  let html=`<div class="diary-header"><div class="lbl">Diary Entry</div><div class="d">${dateStr}</div></div>`;
+  const secs=[['🌅 MORNING THOUGHTS','morning'],['🎯 WHAT I ACCOMPLISHED','acc'],['📚 WHAT I LEARNED','learn']];
+  secs.forEach(([label,key])=>{if(e[key])html+=`<div class="diary-section"><div class="hdr">${label}</div><div class="txt">${esc(e[key])}</div></div>`});
+  if(gratLines.length){html+=`<div class="diary-section"><div class="hdr">🙏 GRATITUDE</div><div class="grat">${gratLines.map((l,i)=>`<div>${i+1}. ${esc(l)}</div>`).join('')}</div></div>`}
+  if(e.evening)html+=`<div class="diary-section"><div class="hdr">🌙 EVENING REFLECTION</div><div class="txt">${esc(e.evening)}</div></div>`;
+  if(e.notes)html+=`<div class="diary-section"><div class="hdr">💡 NOTES</div><div class="txt">${esc(e.notes)}</div></div>`;
+  return html;
+}
+
+function exportToExcel(filename,rows){
+  const htmlEsc=s=>String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  let html=`<html xmlns:x="urn:schemas-microsoft-com:office:excel"><head><meta charset="UTF-8"><style>th{background:#7c5cff;color:#fff;padding:8px;font-weight:bold;border:1px solid #444;font-family:Arial;font-size:11px}td{padding:6px;border:1px solid #ccc;vertical-align:top;white-space:pre-wrap;font-family:Arial;font-size:11px}</style></head><body><table>`;
+  rows.forEach((row,idx)=>{const tag=idx===0?'th':'td';html+='<tr>'+row.map(c=>`<${tag}>${htmlEsc(c)}</${tag}>`).join('')+'</tr>'});
+  html+='</table></body></html>';
+  const blob=new Blob(['\ufeff'+html],{type:'application/vnd.ms-excel;charset=utf-8'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=filename;a.click();URL.revokeObjectURL(a.href);
+}
+const JOURNAL_HEADERS=['Date','Week','Morning Thoughts','Accomplished','Learned','Gratitude 1','Gratitude 2','Gratitude 3','Gratitude 4','Gratitude 5','Evening Reflection','Notes'];
+function journalRowForDate(date){const e=g(`journal.entries.${date}`)||{};return [date,getISOWeek(date),e.morning||'',e.acc||'',e.learn||'',e.grat1||'',e.grat2||'',e.grat3||'',e.grat4||'',e.grat5||'',e.evening||'',e.notes||'']}
+function exportWeekExcel(weekKey){const entries=g('journal.entries')||{};const dates=Object.keys(entries).filter(d=>getISOWeek(d)===weekKey).sort();if(!dates.length){toast('No entries in this week');return}exportToExcel(`diary-${weekKey}.xls`,[JOURNAL_HEADERS,...dates.map(journalRowForDate)]);toast(`✅ Week ${weekKey} exported (${dates.length} entries)`)}
+function exportAllExcel(){const entries=g('journal.entries')||{};const dates=Object.keys(entries).sort();if(!dates.length){toast('No entries yet');return}exportToExcel(`diary-all-${todayISO()}.xls`,[JOURNAL_HEADERS,...dates.map(journalRowForDate)]);toast(`✅ All ${dates.length} entries exported`)}
+
+function metrics(){const h=countCol('today.habits',HABITS.length,DOW);const w=countCol('today.water',WATER_TIMES.length,DOW);const l=sumField('learning.mod',MODULES.length,'d');const inc=sumField('money.inc',8,'amt');const exp=sumField('money.exp',12,'amt');const ceo=CEO_SKILLS.filter((_,i)=>(Number(g(`ceo.skill.${i}`))||0)>=9).length;let gp=0;MGOALS.forEach((gl,i)=>{const tg=Number(g(`goals.m.${i}.t`))||gl[2];const cu=Number(g(`goals.m.${i}.c`))||0;gp+=tg>0?Math.min(1,cu/tg):0});const br=BOOKS.filter((_,i)=>g(`ceo.book.${i}`)).length;const entries=g('journal.entries')||{};return{habitsToday:h,waterToday:w,learningHrs:l,income:inc,expense:exp,savings:inc-exp,ceoDone:ceo,goalsPct:gp/MGOALS.length,booksRead:br,journalEntries:Object.keys(entries).length}}
+
+function viewDashboard(){const m=metrics();const now=new Date();const gr=now.getHours()<12?'Good Morning':now.getHours()<17?'Good Afternoon':'Good Evening';const ds=now.toLocaleDateString('en-GB',{weekday:'long',day:'2-digit',month:'short',year:'numeric'});const te=g(`journal.entries.${todayISO()}`);const he=te&&(te.morning||te.acc||te.learn||te.evening);return`
+<div class="hero"><h1>${gr}, <em>CEO</em> 👑</h1><p>${ds} — Your life runs on systems. Let's execute.</p>
+<div class="chips"><span class="chip">🔥 Habits: ${m.habitsToday}/${HABITS.length}</span><span class="chip">💧 Water: ${m.waterToday}/8</span><span class="chip">📔 Diary: ${m.journalEntries} entries</span><span class="chip">💰 ${fmtINR(m.savings)}</span></div></div>
+
+<div class="card" style="border-color:rgba(124,92,255,.45);background:linear-gradient(135deg,rgba(124,92,255,.18),rgba(34,211,238,.06))">
+<div class="card-h"><h3>📔 ${he?'Diary Entry Saved for Today':'Write Today\'s Diary'}</h3><span class="tag">${he?'✅ Already written':'⏰ 2 min'}</span></div>
+<p class="muted" style="margin-bottom:14px">${he?'Aaj ki entry ho chuki hai. Dobara padhna hai? Open karo.':'Aaj kya seekha, kya kiya, kya feel hua — sab likho. Auto-formatted diary preview dekho.'}</p>
+<button class="btn primary" data-go="journal">📖 ${he?'Read Today\'s Diary':'Write Diary Now'}</button>
+</div>
+
+<div class="stats">
+<div class="stat"><div class="em">✅</div><div class="lb">Today Habits</div><div class="vl">${m.habitsToday}<span style="font-size:14px;color:var(--mut)">/${HABITS.length}</span></div>${bar(m.habitsToday/HABITS.length,'g')}<div class="sb">Keep the streak</div></div>
+<div class="stat"><div class="em">📔</div><div class="lb">Diary Entries</div><div class="vl">${m.journalEntries}</div>${bar(Math.min(1,m.journalEntries/30))}<div class="sb">Total written</div></div>
+<div class="stat"><div class="em">💧</div><div class="lb">Water</div><div class="vl">${m.waterToday}<span style="font-size:14px;color:var(--mut)">/8</span></div>${bar(m.waterToday/8)}<div class="sb">Hydration</div></div>
+<div class="stat"><div class="em">💰</div><div class="lb">Net Savings</div><div class="vl" style="font-size:21px">${fmtINR(m.savings)}</div>${bar(m.income>0?Math.max(0,m.savings/m.income):0,'g')}<div class="sb">Inc ${fmtINR(m.income)} · Exp ${fmtINR(m.expense)}</div></div>
+<div class="stat"><div class="em">👑</div><div class="lb">CEO Skills</div><div class="vl">${m.ceoDone}<span style="font-size:14px;color:var(--mut)">/${CEO_SKILLS.length}</span></div>${bar(m.ceoDone/CEO_SKILLS.length)}<div class="sb">Score 9+ counts</div></div>
+<div class="stat"><div class="em">🎯</div><div class="lb">Monthly Goals</div><div class="vl">${pctText(m.goalsPct)}</div>${bar(m.goalsPct)}<div class="sb">${MGOALS.length} active</div></div>
+</div>
+
+<div class="grid2">
+<div>
+<div class="card"><div class="card-h"><h3>⏰ Today's Schedule</h3><span class="tag">${countCol('today.sched',SCHEDULE.length,0)} marked</span></div>
+<div class="tbl-wrap"><table><thead><tr><th>Time</th><th>Activity</th><th class="c">Done</th></tr></thead><tbody>
+${SCHEDULE.map((r,i)=>`<tr><td class="rowlab" style="color:#8b97ad;font-variant-numeric:tabular-nums">${r[0]}</td><td>${r[1]}</td><td class="c">${chk('today.sched.'+i,'sm')}</td></tr>`).join('')}
+</tbody></table></div></div>
+<div class="card"><div class="card-h"><h3>💪 Weekly Habits</h3><span class="tag">14 × 7</span></div>
+${weekGrid('today.habits',HABITS.map(h=>h[0]+' '+h[1]),7,DAYS,true)}</div>
+</div>
+<div>
+<div class="card"><div class="card-h"><h3>⏱️ Focus Timer</h3><span class="tag">Pomodoro</span></div>
+<div class="pomo"><div class="t" id="pomoT">25:00</div><button class="btn primary" id="pomoStart">Start</button><button class="btn" id="pomoReset">Reset</button></div>
+<p class="muted" style="margin-top:12px">25 min deep work → 5 min break. No phone.</p></div>
+<div class="card"><div class="card-h"><h3>🎯 Monthly Goals</h3><span class="tag">Progress</span></div>
+${MGOALS.map((gl,i)=>{const t=Number(g(`goals.m.${i}.t`))||gl[2];const c=Number(g(`goals.m.${i}.c`))||0;const p=t>0?Math.min(1,c/t):0;return`<div style="margin-bottom:13px"><div style="display:flex;justify-content:space-between;font-size:12.5px;margin-bottom:5px"><span>${gl[0]} ${gl[1]}</span><b style="color:#a5b4fc">${c}/${t}</b></div>${bar(p,p>=0.9?'g':p>=0.5?'':'w')}</div>`}).join('')}
+</div>
+</div></div>`}
+
+function viewJournal(){const tab=g('journalUI.tab')||'write';const entriesCount=Object.keys(g('journal.entries')||{}).length;return`
+<div class="hero"><h1>📔 Journal — <em>My Diary</em></h1><p>Write today. Preserve forever. Export anytime.</p>
+<div class="chips"><span class="chip">📚 ${entriesCount} entries</span><span class="chip">📊 Excel export ready</span><span class="chip">💾 Auto-saved</span></div></div>
+<div class="jtabs">
+<button class="jtab ${tab==='write'?'active':''}" data-jtab="write">✍️ Write</button>
+<button class="jtab ${tab==='weekly'?'active':''}" data-jtab="weekly">📅 Weekly Archive</button>
+<button class="jtab ${tab==='all'?'active':''}" data-jtab="all">📚 All Entries</button>
+</div>
+${tab==='write'?renderJournalWrite():tab==='weekly'?renderJournalWeekly():renderJournalAll()}`}
+
+function renderJournalWrite(){const today=todayISO();const date=g('journalUI.date')||today;const base=`journal.entries.${date}`;const d=new Date(date+'T00:00:00');const pretty=d.toLocaleDateString('en-GB',{weekday:'long',day:'2-digit',month:'long',year:'numeric'});return`
+<div class="card"><div class="card-h"><h3>📅 Date</h3><span class="tag">${pretty}</span></div>
+<input type="date" class="inp" id="journalDateInput" value="${date}" style="max-width:240px"/>
+<p class="muted" style="margin-top:10px">Har field me likhne pe right side me formatted diary preview turant update hoga. Sab kuch auto-save hai.</p></div>
+<div class="grid2" style="margin-top:16px">
+<div>
+<div class="card"><div class="card-h"><h3>🌅 Morning Thoughts</h3></div>
+<textarea class="inp" data-k="${base}.morning" rows="3" placeholder="Subah ka pehla thought... kya chal raha hai mann me?">${esc(g(`${base}.morning`)||'')}</textarea></div>
+<div class="card"><div class="card-h"><h3>🎯 What I Accomplished</h3></div>
+<textarea class="inp" data-k="${base}.acc" rows="3" placeholder="Aaj kya kaam kiya, kya complete hua...">${esc(g(`${base}.acc`)||'')}</textarea></div>
+<div class="card"><div class="card-h"><h3>📚 What I Learned</h3></div>
+<textarea class="inp" data-k="${base}.learn" rows="3" placeholder="Aaj kya naya seekha...">${esc(g(`${base}.learn`)||'')}</textarea></div>
+<div class="card"><div class="card-h"><h3>🙏 Gratitude — 5 Things</h3></div>
+${[1,2,3,4,5].map(i=>`<p class="muted" style="margin:${i>1?'12px':0} 0 5px">${i}. ${['Today I am grateful for...','A person who made me smile...','Something beautiful I noticed...','A lesson I learned today...','Something I am proud of...'][i-1]}</p><input class="inp" data-k="${base}.grat${i}" placeholder="..." value="${esc(g(`${base}.grat${i}`)||'')}"/>`).join('')}
+</div>
+<div class="card"><div class="card-h"><h3>🌙 Evening Reflection</h3></div>
+<textarea class="inp" data-k="${base}.evening" rows="3" placeholder="Aaj ka din kaisa tha? Kya accha hua, kya better ho sakta tha...">${esc(g(`${base}.evening`)||'')}</textarea></div>
+<div class="card"><div class="card-h"><h3>💡 Ideas & Notes</h3></div>
+<textarea class="inp" data-k="${base}.notes" rows="3" placeholder="Random thoughts, ideas, reminders...">${esc(g(`${base}.notes`)||'')}</textarea></div>
+</div>
+<div>
+<div class="card" style="position:sticky;top:80px">
+<div class="card-h"><h3>📖 Diary Preview</h3><span class="tag">Auto-formatted</span></div>
+<div id="diaryPreview">${renderDiaryPreview(date)}</div>
+<div style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap">
+<button class="btn primary" id="journalSaveBtn">💾 Save & View Week</button>
+<button class="btn" id="journalExportBtn">📊 Export This Date</button>
+</div></div></div></div>`}
+
+function renderJournalWeekly(){const entries=g('journal.entries')||{};const weekMap={};Object.keys(entries).forEach(date=>{const wk=getISOWeek(date);if(!weekMap[wk])weekMap[wk]=[];weekMap[wk].push(date)});const sortedWeeks=Object.keys(weekMap).sort().reverse();if(!sortedWeeks.length){return `<div class="card"><div class="diary-empty"><div class="ico">📅</div><p>No diary entries yet.</p><p style="margin-top:8px;font-size:12px">Go to <b style="color:#a5b4fc">✍️ Write</b> tab to start your first entry.</p></div></div>`}return sortedWeeks.map(wk=>{const dates=weekMap[wk].sort();const range=getWeekRange(wk);const cnt=dates.length;return `<div class="card"><div class="card-h"><h3>📅 ${wk}</h3><span class="tag">${range} · ${cnt} ${cnt===1?'entry':'entries'}</span><button class="btn primary" data-exportweek="${wk}" style="padding:6px 12px;font-size:11.5px">📊 Export Excel</button></div>
+<div class="tbl-wrap"><table><thead><tr><th style="width:120px">Date</th><th>Morning</th><th>Accomplished</th><th>Learned</th><th class="c" style="width:90px">Open</th></tr></thead><tbody>
+${dates.map(d=>{const e=entries[d];return`<tr><td class="rowlab">${d}</td><td class="muted" style="max-width:220px">${esc(trunc(e.morning,60))}</td><td class="muted" style="max-width:220px">${esc(trunc(e.acc,60))}</td><td class="muted" style="max-width:220px">${esc(trunc(e.learn,60))}</td><td class="c"><button class="btn" data-openentry="${d}" style="padding:5px 10px;font-size:11px">📖 Open</button></td></tr>`}).join('')}
+</tbody></table></div></div>`}).join('')}
+
+function renderJournalAll(){const entries=g('journal.entries')||{};const dates=Object.keys(entries).sort().reverse();if(!dates.length){return `<div class="card"><div class="diary-empty"><div class="ico">📚</div><p>No entries yet.</p></div></div>`}return `<div class="card"><div class="card-h"><h3>📚 All Diary Entries (${dates.length})</h3><button class="btn primary" id="exportAllBtn" style="padding:6px 12px;font-size:11.5px">📊 Export All to Excel</button></div>
+<div class="tbl-wrap"><table><thead><tr><th style="width:120px">Date</th><th style="width:110px">Week</th><th>Summary</th><th class="c" style="width:90px">Open</th></tr></thead><tbody>
+${dates.map(d=>{const e=entries[d];const summary=(e.morning||e.acc||e.learn||e.evening||'No content').slice(0,120);return`<tr><td class="rowlab">${d}</td><td class="muted">${getISOWeek(d)}</td><td class="muted">${esc(summary)}${summary.length>=120?'...':''}</td><td class="c"><button class="btn" data-openentry="${d}" style="padding:5px 10px;font-size:11px">📖 Read</button></td></tr>`}).join('')}
+</tbody></table></div></div>`}
+
+function viewToday(){return`
+<div class="hero"><h1>📅 Today — <em>${new Date().toLocaleDateString('en-GB',{weekday:'long',day:'2-digit',month:'short',year:'numeric'})}</em></h1><p>Plan the day. Win the day. Repeat.</p></div>
+<div class="card"><div class="card-h"><h3>🎯 Top 3 Priorities</h3></div>
+${[0,1,2].map(i=>`<div style="display:flex;gap:10px;align-items:center;margin-bottom:10px"><span style="width:26px;height:26px;border-radius:8px;display:grid;place-items:center;background:linear-gradient(135deg,var(--a1),var(--a2));font-size:12px;font-weight:800">${i+1}</span>${inp('today.prio.'+i,'Priority '+(i+1)+'...')}</div>`).join('')}</div>
+<div class="card"><div class="card-h"><h3>⏰ Daily Schedule</h3></div>
+<div class="tbl-wrap"><table><thead><tr><th style="width:100px">Time</th><th>Activity</th><th class="c" style="width:70px">Done</th></tr></thead><tbody>
+${SCHEDULE.map((r,i)=>`<tr><td class="rowlab" style="color:#8b97ad;font-variant-numeric:tabular-nums">${r[0]}</td><td>${r[1]}</td><td class="c">${chk('today.sched.'+i)}</td></tr>`).join('')}
+</tbody></table></div></div>
+<div class="card"><div class="card-h"><h3>💪 Daily Habits</h3></div>${weekGrid('today.habits',HABITS.map(h=>h[0]+' '+h[1]),7,DAYS,true)}</div>
+<div class="card"><div class="card-h"><h3>💧 Water Intake</h3></div>${weekGrid('today.water',WATER_TIMES,7,DAYS,true)}</div>`}
+
+function viewWeek(){const now=new Date();const start=new Date(now);start.setDate(now.getDate()-DOW);const end=new Date(start);end.setDate(start.getDate()+6);const f=d=>d.toLocaleDateString('en-GB',{day:'2-digit',month:'short'});const times=['06:00','06:30','07:00','07:30','08:00','08:30','09:30','10:00','11:30','12:00','13:00','13:30','15:00','16:00','16:30','18:00','18:30','19:00','20:00','20:30','21:00','21:30','22:00'];const prio=(k,l,c)=>`<div class="card"><div class="card-h"><h3>${l}</h3><span class="tag">${c}</span></div>
+<div class="tbl-wrap"><table><thead><tr><th class="c" style="width:56px">Done</th><th>Task</th><th style="width:150px">Deadline</th></tr></thead><tbody>
+${[0,1,2,3,4].map(i=>`<tr><td class="c">${chk(`week.${k}.${i}.d`,'sm')}</td><td>${inp(`week.${k}.${i}.t`,'Task...')}</td><td><input class="inp" type="date" data-k="week.${k}.${i}.dl" value="${g(`week.${k}.${i}.dl`)??''}"/></td></tr>`).join('')}
+</tbody></table></div></div>`;return`
+<div class="hero"><h1>📆 Week — <em>${f(start)} to ${f(end)}</em></h1><p>Plan · Prioritise · Review</p></div>
+<div class="card"><div class="card-h"><h3>📅 Weekly Schedule</h3></div>
+<div class="tbl-wrap"><table><thead><tr><th style="width:90px">Time</th>${DAYS.map(d=>`<th class="c">${d}</th>`).join('')}</tr></thead><tbody>
+${times.map((t,i)=>`<tr><td class="rowlab" style="color:#8b97ad;font-variant-numeric:tabular-nums">${t}</td>${DAYS.map((_,j)=>`<td><input class="inp" style="padding:5px 8px;font-size:12px" data-k="week.grid.${i}.${j}" placeholder="—" value="${g(`week.grid.${i}.${j}`)??''}"/></td>`).join('')}</tr>`).join('')}
+</tbody></table></div></div>
+${prio('high','🔴 High Priority','Urgent')}${prio('med','🟡 Medium Priority','Important')}${prio('low','🟢 Low Priority','Nice')}
+<div class="card"><div class="card-h"><h3>🏆 Weekly Review</h3></div>
+<div class="grid2" style="gap:14px"><div>
+<p class="muted" style="margin-bottom:6px">🏆 What went well?</p>${ta('week.rev.well','...',2)}
+<p class="muted" style="margin:12px 0 6px">📚 What did I learn?</p>${ta('week.rev.learn','...',2)}
+<p class="muted" style="margin:12px 0 6px">⚠️ Challenges?</p>${ta('week.rev.chal','...',2)}
+</div><div>
+<p class="muted" style="margin-bottom:6px">💡 To improve?</p>${ta('week.rev.improve','...',2)}
+<p class="muted" style="margin:12px 0 6px">🙏 Grateful?</p>${ta('week.rev.grat','...',2)}
+<p class="muted" style="margin:12px 0 6px">🎯 Top 3 next week?</p>${ta('week.rev.next','...',2)}
+</div></div>
+<div class="grid3" style="margin-top:14px">
+<div><p class="muted" style="margin-bottom:6px">📊 Week rating (1–10)</p>${num('week.rev.rating','8','min="1" max="10"')}</div>
+<div style="grid-column:span 2"><p class="muted" style="margin-bottom:6px">🌟 Biggest win</p>${inp('week.rev.win','...')}</div>
+</div></div>`}
+
+function viewCollege(){const avg=(()=>{let t=0;for(let i=0;i<SUBJECTS.length;i++){let c=0;for(let j=0;j<7;j++)if(g(`college.track.${i}.${j}`))c++;t+=c/7}return t/SUBJECTS.length})();return`
+<div class="hero"><h1>🎓 College — <em>Amity Online</em></h1><p>${SUBJECTS.length} subjects · Weekly ${pctText(avg)}</p></div>
+<div class="card"><div class="card-h"><h3>📚 Subject Tracker</h3></div>
+<div class="tbl-wrap"><table><thead><tr><th style="width:270px">Subject</th>${DAYS.map(d=>`<th class="c">${d}</th>`).join('')}<th class="c">%</th></tr></thead><tbody>
+${SUBJECTS.map((sub,i)=>{let c=0;for(let j=0;j<7;j++)if(g(`college.track.${i}.${j}`))c++;const p=c/7;return`<tr><td class="rowlab">${sub}</td>${DAYS.map((_,j)=>`<td class="c">${chk(`college.track.${i}.${j}`,'sm')}</td>`).join('')}<td class="c" style="min-width:110px"><b style="font-size:11.5px;color:#a5b4fc">${pctText(p)}</b>${bar(p,p>=0.9?'g':p>=0.5?'':'w')}</td></tr>`}).join('')}
+<tr><td class="rowlab" style="font-weight:700">📊 AVERAGE</td><td colspan="7"></td><td class="c"><b style="color:#6ee7b7">${pctText(avg)}</b></td></tr>
+</tbody></table></div></div>
+<div class="card"><div class="card-h"><h3>📖 Subject Progress</h3></div>
+<div class="tbl-wrap"><table><thead><tr><th style="width:260px">Subject</th><th class="c">Total</th><th class="c">Done</th><th class="c">Left</th><th style="width:130px">%</th><th>Status</th></tr></thead><tbody>
+${SUBJECTS.map((sub,i)=>{const total=Number(g(`college.prog.${i}.t`))||10;const done=Number(g(`college.prog.${i}.d`))||0;const p=total>0?done/total:0;return`<tr><td class="rowlab">${sub}</td><td class="c" style="width:90px"><input class="inp num" type="number" data-k="college.prog.${i}.t" value="${total}"/></td><td class="c" style="width:90px"><input class="inp num" type="number" data-k="college.prog.${i}.d" value="${done}"/></td><td class="c"><b>${Math.max(0,total-done)}</b></td><td>${bar(p,p>=0.99?'g':p>0?'':'')}<span style="font-size:11px;color:var(--mut)">${pctText(p)}</span></td><td>${statusPill(p)}</td></tr>`}).join('')}
+</tbody></table></div></div>`}
+
+function viewLearning(){const th=(()=>{let t=0;for(let i=0;i<MODULES.length;i++)t+=Number(g(`learning.mod.${i}.t`))||0;return t})();const dh=(()=>{let t=0;for(let i=0;i<MODULES.length;i++)t+=Number(g(`learning.mod.${i}.d`))||0;return t})();return`
+<div class="hero"><h1>📚 Learning — <em>Skills & Knowledge</em></h1><p>${MODULES.length} modules · ${dh}h of ${th}h</p></div>
+<div class="card"><div class="card-h"><h3>🎯 Learning Modules</h3></div>
+<div class="tbl-wrap"><table><thead><tr><th style="width:230px">Module</th><th class="c">Total</th><th class="c">Done</th><th class="c">Left</th><th style="width:150px">%</th><th>Status</th></tr></thead><tbody>
+${MODULES.map((mod,i)=>{const t=Number(g(`learning.mod.${i}.t`))||0;const d=Number(g(`learning.mod.${i}.d`))||0;const p=t>0?Math.min(1,d/t):0;const st=t===0?'<span class="pill none">—</span>':d>=t?'<span class="pill ok">✅ Done</span>':d>0?'<span class="pill low">🔄 In Progress</span>':'<span class="pill none">⏳ Not Started</span>';return`<tr><td class="rowlab">${mod}</td><td class="c" style="width:96px"><input class="inp num" type="number" min="0" data-k="learning.mod.${i}.t" value="${t||''}"/></td><td class="c" style="width:96px"><input class="inp num" type="number" min="0" data-k="learning.mod.${i}.d" value="${d||''}"/></td><td class="c"><b>${Math.max(0,t-d)}</b></td><td>${bar(p,p>=1?'g':p>0?'':'')}<span style="font-size:11px;color:var(--mut)">${pctText(p)}</span></td><td>${st}</td></tr>`}).join('')}
+<tr><td class="rowlab" style="font-weight:700">📊 TOTAL</td><td class="c"><b>${th}</b></td><td class="c"><b>${dh}</b></td><td class="c"><b>${Math.max(0,th-dh)}</b></td><td colspan="2">${bar(th>0?dh/th:0,'g')}<span style="font-size:11px;color:var(--mut)">${pctText(th>0?dh/th:0)}</span></td></tr>
+</tbody></table></div></div>
+<div class="card"><div class="card-h"><h3>🌐 Languages</h3></div>${weekGrid('learning.lang',LANGS,7,DAYS,true)}</div>
+<div class="card"><div class="card-h"><h3>📂 Folders</h3><span class="tag">${FOLDERS.length}</span></div>
+<input class="inp" id="folderSearch" placeholder="🔍 Search..." style="margin-bottom:12px"/>
+<div class="tree" id="folderTree">${FOLDERS.map(([lv,name])=>`<div class="tree-row" data-name="${name.toLowerCase()}" style="margin-left:${(lv-1)*16}px"><span class="lv">L${lv}</span><span>${lv<=2?'📁':'📄'}</span><span>${name}</span></div>`).join('')}</div></div>`}
+
+function viewRevision(){const sch=[['07:30','📘 Knowledge','📘 Knowledge','📘 Knowledge','📘 Knowledge','📘 Knowledge','📘 Knowledge','📊 Test','Knowledge'],['13:00','🔄 College','🔄 College','🔄 College','🔄 College','🔄 College','🔄 College','🔄 Mistake','College'],['14:00','🎓 Stats','🌐 English','🛠️ Python','🌐 Japanese','🧠 DSA','🛠️ Excel','📝 Notes','Mixed'],['20:00','🛠️ Excel','🛠️ SQL','🛠️ SQL','🛠️ SQL','🎤 Voice','🌐 Languages','🧠 Spaced','Mixed'],['21:00','📝 Cards','📝 Cards','📝 Cards','📝 Cards','📝 Cards','📝 Cards','📊 KPI','Flashcards']];const avg=(()=>{let t=0;for(let i=0;i<REV_SUBJECTS.length;i++){let c=0;for(let j=0;j<7;j++)if(g(`rev.track.${i}.${j}`))c++;t+=c/7}return t/REV_SUBJECTS.length})();return`
+<div class="hero"><h1>🔄 Revision — <em>Schedule & Tracker</em></h1><p>Spaced repetition beats cramming.</p></div>
+<div class="card"><div class="card-h"><h3>⏰ Revision Schedule</h3></div>
+<div class="tbl-wrap"><table><thead><tr><th>Time</th>${DAYS.map(d=>`<th class="c">${d}</th>`).join('')}<th>Type</th></tr></thead><tbody>
+${sch.map(r=>`<tr><td class="rowlab">${r[0]}</td>${r.slice(1,8).map(c=>`<td class="c" style="font-size:12px">${c}</td>`).join('')}<td><span class="pill none">${r[8]}</span></td></tr>`).join('')}
+</tbody></table></div></div>
+<div class="card"><div class="card-h"><h3>✅ Revision Tracker</h3></div>
+<div class="tbl-wrap"><table><thead><tr><th style="width:250px">Subject</th>${DAYS.map(d=>`<th class="c">${d}</th>`).join('')}<th class="c">%</th><th>Status</th></tr></thead><tbody>
+${REV_SUBJECTS.map((sub,i)=>{let c=0;for(let j=0;j<7;j++)if(g(`rev.track.${i}.${j}`))c++;const p=c/7;const st=p>=0.9?'<span class="pill ok">🟢</span>':p>=0.7?'<span class="pill mid">🟡</span>':p>0?'<span class="pill low">🔴</span>':'<span class="pill none">⚪</span>';return`<tr><td class="rowlab">${sub}</td>${DAYS.map((_,j)=>`<td class="c">${chk(`rev.track.${i}.${j}`,'sm')}</td>`).join('')}<td class="c" style="min-width:100px"><b style="font-size:11.5px;color:#a5b4fc">${pctText(p)}</b>${bar(p,p>=0.9?'g':p>=0.5?'':'w')}</td><td>${st}</td></tr>`}).join('')}
+</tbody></table></div></div>
+<div class="card"><div class="card-h"><h3>🧠 Study Techniques</h3></div>
+<div class="tbl-wrap"><table><thead><tr><th class="c" style="width:56px">Use</th><th style="width:220px">Technique</th><th>Description</th></tr></thead><tbody>
+${TECHNIQUES.map((t,i)=>`<tr><td class="c">${chk(`rev.tech.${i}`,'sm')}</td><td class="rowlab">${t[0]} ${t[1]}</td><td class="muted">${t[2]}</td></tr>`).join('')}
+</tbody></table></div></div>`}
+
+function viewHealth(){const w=Array.from({length:12},(_,i)=>Number(g(`health.w.${i}`))||0);const wt=DAYS.map((_,j)=>countCol('health.water',8,j));const valid=w.filter(x=>x>0);let spark='<div class="muted">Add 2+ weight readings for trend.</div>';if(valid.length>=2){const mn=Math.min(...valid),mx=Math.max(...valid),rng=(mx-mn)||1;const W=560,H=130,P=14;const pts=valid.map((x,i)=>[P+i*((W-2*P)/(valid.length-1)),H-P-((x-mn)/rng)*(H-2*P)]);const d=pts.map((p,i)=>(i?'L':'M')+p[0].toFixed(1)+' '+p[1].toFixed(1)).join(' ');const area=d+` L ${pts[pts.length-1][0].toFixed(1)} ${H-P} L ${pts[0][0].toFixed(1)} ${H-P} Z`;spark=`<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto"><defs><linearGradient id="wg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#7c5cff" stop-opacity=".45"/><stop offset="100%" stop-color="#7c5cff" stop-opacity="0"/></linearGradient></defs><path d="${area}" fill="url(#wg)"/><path d="${d}" fill="none" stroke="#22d3ee" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>${pts.map(p=>`<circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="3.5" fill="#0b0f1a" stroke="#22d3ee" stroke-width="2"/>`).join('')}</svg>`}return`
+<div class="hero"><h1>💪 Health — <em>Weight, Water, Workout</em></h1></div>
+<div class="grid2">
+<div class="card"><div class="card-h"><h3>⚖️ Weight Tracker</h3></div>
+<div class="tbl-wrap"><table><thead><tr><th>Week</th><th style="width:110px">Weight</th><th class="c">Δ</th><th>Notes</th></tr></thead><tbody>
+${Array.from({length:12},(_,i)=>{const cur=Number(g(`health.w.${i}`))||0;const prev=i>0?(Number(g(`health.w.${i-1}`))||0):0;const diff=(cur&&prev)?(cur-prev):null;const col=diff===null?'var(--mut)':diff>0?'#6ee7b7':diff<0?'#fda4af':'var(--mut)';return`<tr><td class="rowlab">Week ${i+1}</td><td><input class="inp num" type="number" step="0.1" data-k="health.w.${i}" value="${cur||''}" placeholder="0"/></td><td class="c" style="color:${col};font-weight:700">${diff===null?'–':(diff>0?'+':'')+diff.toFixed(1)}</td><td>${inp(`health.wn.${i}`,'Notes...')}</td></tr>`}).join('')}
+</tbody></table></div></div>
+<div class="card"><div class="card-h"><h3>📈 Trend</h3></div>${spark}
+<div style="margin-top:16px">${SUPPLEMENTS.map((s,i)=>`<div class="kv"><span>${s[0]} ${s[1]}</span>${chk(`health.sup.${i}`,'sm')}</div>`).join('')}</div></div>
+</div>
+<div class="card"><div class="card-h"><h3>💧 Water Intake</h3></div>
+<div class="tbl-wrap"><table><thead><tr><th style="width:90px">Time</th>${DAYS.map(d=>`<th class="c">${d}</th>`).join('')}</tr></thead><tbody>
+${WATER_TIMES.map((t,i)=>`<tr><td class="rowlab">${t}</td>${DAYS.map((_,j)=>`<td class="c">${chk(`health.water.${i}.${j}`,'sm')}</td>`).join('')}</tr>`).join('')}
+<tr><td class="rowlab" style="font-weight:700">📊 TOTAL</td>${wt.map(v=>`<td class="c"><b style="color:${v>=8?'#6ee7b7':'#a5b4fc'}">${v}</b></td>`).join('')}</tr>
+</tbody></table></div></div>
+<div class="card"><div class="card-h"><h3>💊 Supplements</h3></div>
+<div class="tbl-wrap"><table><thead><tr><th style="width:180px">Supplement</th><th>Dose</th>${DAYS.map(d=>`<th class="c">${d}</th>`).join('')}</tr></thead><tbody>
+${SUPPLEMENTS.map((s,i)=>`<tr><td class="rowlab">${s[0]} ${s[1]}</td><td class="muted">${s[2]}</td>${DAYS.map((_,j)=>`<td class="c">${chk(`health.supp.${i}.${j}`,'sm')}</td>`).join('')}</tr>`).join('')}
+</tbody></table></div></div>
+<div class="card"><div class="card-h"><h3>🏋️ Workout Plan</h3></div>
+<div class="tbl-wrap"><table><thead><tr><th>Day</th><th>Workout</th><th>Time</th><th>Pre</th><th>Post</th></tr></thead><tbody>
+${WORKOUT.map(w=>`<tr><td class="rowlab">${w[0]}</td><td><b style="color:#c7d2fe">${w[1]}</b></td><td class="muted">${w[2]}</td><td class="muted">${w[3]}</td><td class="muted">${w[4]}</td></tr>`).join('')}
+</tbody></table></div></div>`}
+
+function viewFood(){const dt=DAYS.map((_,j)=>{let t=0;MEALS.forEach((m,i)=>{const def=CAL_DEFAULT[m][j];const v=Number(g(`food.cal.${i}.${j}`));t+=(isNaN(v)?def:v)||0});return t});const gtot=GROCERY.reduce((acc,_,i)=>{const q=Number(g(`food.g.q.${i}`))??GROCERY[i][2];const p=Number(g(`food.g.p.${i}`))??GROCERY[i][3];return acc+q*p},0);return`
+<div class="hero"><h1>🍽️ Food — <em>Meals, Grocery, Calories</em></h1><div class="chips"><span class="chip">🔥 Avg ${Math.round(dt.reduce((a,b)=>a+b,0)/7)} cal/day</span><span class="chip">🛒 ${fmtINR(gtot)}</span></div></div>
+<div class="card"><div class="card-h"><h3>📅 Weekly Meal Plan</h3></div>
+<div class="tbl-wrap"><table><thead><tr><th style="width:150px">Meal</th>${DAYS.map(d=>`<th>${d}</th>`).join('')}</tr></thead><tbody>
+${MEALS.map((m,i)=>`<tr><td class="rowlab">${m}</td>${DAYS.map((_,j)=>`<td style="min-width:130px"><input class="inp" style="padding:5px 8px;font-size:12px" data-k="food.plan.${i}.${j}" value="${g(`food.plan.${i}.${j}`)??MEAL_PLAN[m][j]}"/></td>`).join('')}</tr>`).join('')}
+</tbody></table></div></div>
+<div class="card"><div class="card-h"><h3>🍎 Calorie Tracker</h3></div>
+<div class="tbl-wrap"><table><thead><tr><th style="width:150px">Meal</th>${DAYS.map(d=>`<th class="c">${d}</th>`).join('')}</tr></thead><tbody>
+${MEALS.map((m,i)=>`<tr><td class="rowlab">${m}</td>${DAYS.map((_,j)=>`<td class="c"><input class="inp num" type="number" style="width:78px" data-k="food.cal.${i}.${j}" value="${g(`food.cal.${i}.${j}`)??CAL_DEFAULT[m][j]}"/></td>`).join('')}</tr>`).join('')}
+<tr><td class="rowlab" style="font-weight:700">📊 TOTAL</td>${dt.map(t=>`<td class="c"><b style="color:${t>=2000?'#6ee7b7':'#fcd34d'}">${t}</b></td>`).join('')}</tr>
+</tbody></table></div></div>
+<div class="card"><div class="card-h"><h3>🛒 Grocery List</h3><span class="tag">Total ${fmtINR(gtot)}</span></div>
+<div class="tbl-wrap"><table><thead><tr><th class="c" style="width:56px">Done</th><th>Item</th><th>Category</th><th style="width:100px">Qty</th><th style="width:100px">Price</th><th class="c">Total</th></tr></thead><tbody>
+${GROCERY.map((it,i)=>{const q=Number(g(`food.g.q.${i}`))??it[2];const p=Number(g(`food.g.p.${i}`))??it[3];return`<tr><td class="c">${chk(`food.g.d.${i}`,'sm')}</td><td class="rowlab">${it[0]}</td><td class="muted">${it[1]}</td><td><input class="inp num" type="number" step="0.5" data-k="food.g.q.${i}" value="${q}"/></td><td><input class="inp num" type="number" data-k="food.g.p.${i}" value="${p}"/></td><td class="c"><b style="color:#a5b4fc">${fmtINR(q*p)}</b></td></tr>`}).join('')}
+<tr><td colspan="5" style="text-align:right;font-weight:700">TOTAL</td><td class="c"><b style="color:#6ee7b7">${fmtINR(gtot)}</b></td></tr>
+</tbody></table></div></div>`}
+
+function viewMoney(){const inc=sumField('money.inc',8,'amt');const exp=sumField('money.exp',12,'amt');const sv=inc-exp;const rate=inc>0?sv/inc:0;return`
+<div class="hero"><h1>💰 Money — <em>Income, Expenses, Loans</em></h1><div class="chips"><span class="chip">💵 ${fmtINR(inc)}</span><span class="chip">💳 ${fmtINR(exp)}</span><span class="chip">💰 ${fmtINR(sv)}</span></div></div>
+<div class="stats">
+<div class="stat"><div class="em">💵</div><div class="lb">Income</div><div class="vl" style="font-size:21px;color:#6ee7b7">${fmtINR(inc)}</div></div>
+<div class="stat"><div class="em">💳</div><div class="lb">Expenses</div><div class="vl" style="font-size:21px;color:#fda4af">${fmtINR(exp)}</div></div>
+<div class="stat"><div class="em">💰</div><div class="lb">Net Savings</div><div class="vl" style="font-size:21px">${fmtINR(sv)}</div>${bar(rate>0?rate:0,'g')}</div>
+<div class="stat"><div class="em">📊</div><div class="lb">Savings Rate</div><div class="vl">${pctText(Math.max(0,rate))}</div></div>
+</div>
+<div class="card"><div class="card-h"><h3>💵 Income</h3></div>
+<div class="tbl-wrap"><table><thead><tr><th style="width:150px">Date</th><th>Source</th><th>Category</th><th class="c" style="width:130px">Amount</th><th class="c" style="width:60px">Recv</th></tr></thead><tbody>
+${Array.from({length:8},(_,i)=>`<tr><td><input class="inp" type="date" data-k="money.inc.${i}.d" value="${g(`money.inc.${i}.d`)??''}"/></td><td>${inp(`money.inc.${i}.s`,'Source...')}</td><td>${inp(`money.inc.${i}.c`,'Category...')}</td><td><input class="inp num" type="number" data-k="money.inc.${i}.amt" value="${g(`money.inc.${i}.amt`)??''}" placeholder="0"/></td><td class="c">${chk(`money.inc.${i}.ok`,'sm')}</td></tr>`).join('')}
+</tbody></table></div></div>
+<div class="card"><div class="card-h"><h3>💳 Expenses</h3></div>
+<div class="tbl-wrap"><table><thead><tr><th style="width:150px">Date</th><th>Item</th><th>Category</th><th class="c" style="width:130px">Amount</th><th class="c" style="width:60px">Paid</th></tr></thead><tbody>
+${Array.from({length:12},(_,i)=>`<tr><td><input class="inp" type="date" data-k="money.exp.${i}.d" value="${g(`money.exp.${i}.d`)??''}"/></td><td>${inp(`money.exp.${i}.s`,'Item...')}</td><td>${inp(`money.exp.${i}.c`,'Category...')}</td><td><input class="inp num" type="number" data-k="money.exp.${i}.amt" value="${g(`money.exp.${i}.amt`)??''}" placeholder="0"/></td><td class="c">${chk(`money.exp.${i}.ok`,'sm')}</td></tr>`).join('')}
+</tbody></table></div></div>
+<div class="card"><div class="card-h"><h3>🏦 Loans</h3></div>
+<div class="tbl-wrap"><table><thead><tr><th>Loan</th><th class="c">Principal</th><th class="c">EMI</th><th class="c">Tenure</th><th class="c" style="width:120px">Paid</th><th class="c">Remaining</th><th class="c">Status</th></tr></thead><tbody>
+${LOANS.map((l,i)=>{const paid=Number(g(`money.loan.${i}.paid`))||0;const rem=Math.max(0,l[1]-paid);const p=l[1]>0?paid/l[1]:0;return`<tr><td class="rowlab">${l[0]}</td><td class="c">${fmtINR(l[1])}</td><td class="c">${fmtINR(l[2])}</td><td class="c muted">${l[3]} mo</td><td class="c"><input class="inp num" type="number" data-k="money.loan.${i}.paid" value="${paid}"/></td><td class="c"><b style="color:#fcd34d">${fmtINR(rem)}</b>${bar(p,'g')}</td><td class="c">${p>=1?'<span class="pill ok">✅</span>':'<span class="pill mid">🟡</span>'}</td></tr>`}).join('')}
+</tbody></table></div></div>`}
+
+function viewCEO(){const dc=CEO_SKILLS.filter((_,i)=>(Number(g(`ceo.skill.${i}`))||0)>=9).length;const br=BOOKS.filter((_,i)=>g(`ceo.book.${i}`)).length;return`
+<div class="hero"><h1>👑 CEO — <em>Skills, Books, Mindset</em></h1><div class="chips"><span class="chip">🎯 ${dc}/${CEO_SKILLS.length}</span><span class="chip">📚 ${br}/${BOOKS.length}</span></div></div>
+<div class="card"><div class="card-h"><h3>🎯 CEO Skills</h3></div>
+<div class="tbl-wrap"><table><thead><tr><th style="width:150px">Category</th><th style="width:210px">Skill</th><th style="width:220px">Level</th><th class="c" style="width:60px">/10</th><th>Status</th></tr></thead><tbody>
+${CEO_SKILLS.map((sk,i)=>{const v=Number(g(`ceo.skill.${i}`))||0;const st=v>=9?'<span class="pill ok">Done</span>':v>0?'<span class="pill low">In Progress</span>':'<span class="pill none">Not Started</span>';return`<tr><td class="muted">${sk[0]}</td><td class="rowlab">${sk[1]}</td><td><input type="range" min="0" max="10" value="${v}" data-range="ceo.skill.${i}" style="width:100%;accent-color:#7c5cff"/></td><td class="c"><b class="rngval" data-for="ceo.skill.${i}" style="color:#a5b4fc">${v}</b></td><td>${st}</td></tr>`}).join('')}
+</tbody></table></div></div>
+<div class="card"><div class="card-h"><h3>📚 Books</h3></div>
+<div class="tbl-wrap"><table><thead><tr><th class="c" style="width:56px">Read</th><th style="width:44px">#</th><th>Title</th><th>Author</th><th>Focus</th></tr></thead><tbody>
+${BOOKS.map((b,i)=>`<tr><td class="c">${chk(`ceo.book.${i}`,'sm')}</td><td class="muted">${i+1}</td><td class="rowlab">${b[0]}</td><td class="muted">${b[1]}</td><td><span class="pill none">${b[2]}</span></td></tr>`).join('')}
+</tbody></table></div></div>
+<div class="card"><div class="card-h"><h3>👑 Daily Affirmations</h3></div>
+<div class="tbl-wrap"><table><tbody>
+${AFFIRMATIONS.map((a,i)=>`<tr><td class="rowlab">${a}</td><td class="c" style="width:70px">${chk(`ceo.aff.${i}`)}</td></tr>`).join('')}
+</tbody></table></div></div>`}
+
+function viewGoals(){const mA=(()=>{let t=0;MGOALS.forEach((gl,i)=>{const tg=Number(g(`goals.m.${i}.t`))??gl[2];const cu=Number(g(`goals.m.${i}.c`))??gl[3];t+=tg>0?Math.min(1,cu/tg):0});return t/MGOALS.length})();const yA=(()=>{let t=0;YGOALS.forEach((gl,i)=>{const tg=Number(g(`goals.y.${i}.t`))??gl[2];const cu=Number(g(`goals.y.${i}.c`))||0;t+=tg>0?Math.min(1,cu/tg):0});return t/YGOALS.length})();return`
+<div class="hero"><h1>🎯 Goals — <em>Monthly, Yearly & Habits</em></h1><div class="chips"><span class="chip">📅 ${pctText(mA)}</span><span class="chip">🗓️ ${pctText(yA)}</span></div></div>
+<div class="card"><div class="card-h"><h3>📅 Monthly Goals</h3></div>
+<div class="tbl-wrap"><table><thead><tr><th style="width:150px">Category</th><th>Goal</th><th class="c" style="width:100px">Target</th><th class="c" style="width:100px">Current</th><th style="width:140px">%</th><th>Status</th></tr></thead><tbody>
+${MGOALS.map((gl,i)=>{const tg=Number(g(`goals.m.${i}.t`))||gl[2];const cu=Number(g(`goals.m.${i}.c`))||0;const p=tg>0?Math.min(1,cu/tg):0;return`<tr><td class="muted">${gl[0]}</td><td class="rowlab">${gl[1]}</td><td class="c"><input class="inp num" type="number" data-k="goals.m.${i}.t" value="${tg}"/></td><td class="c"><input class="inp num" type="number" data-k="goals.m.${i}.c" value="${cu}"/></td><td>${bar(p,p>=0.9?'g':p>=0.5?'':'w')}<span style="font-size:11px;color:var(--mut)">${pctText(p)}</span></td><td>${statusPill(p)}</td></tr>`}).join('')}
+</tbody></table></div></div>
+<div class="card"><div class="card-h"><h3>🗓️ Yearly Goals</h3></div>
+<div class="tbl-wrap"><table><thead><tr><th class="c" style="width:44px">#</th><th style="width:150px">Category</th><th>Goal</th><th class="c" style="width:110px">Target</th><th class="c" style="width:110px">Current</th><th style="width:140px">%</th><th>Status</th></tr></thead><tbody>
+${YGOALS.map((gl,i)=>{const tg=Number(g(`goals.y.${i}.t`))||gl[2];const cu=Number(g(`goals.y.${i}.c`))||0;const p=tg>0?Math.min(1,cu/tg):0;return`<tr><td class="c muted">${i+1}</td><td class="muted">${gl[0]}</td><td class="rowlab">${gl[1]}</td><td class="c"><input class="inp num" type="number" data-k="goals.y.${i}.t" value="${tg}"/></td><td class="c"><input class="inp num" type="number" data-k="goals.y.${i}.c" value="${cu}"/></td><td>${bar(p,p>=0.9?'g':p>=0.5?'':'')}<span style="font-size:11px;color:var(--mut)">${pctText(p)}</span></td><td>${statusPill(p)}</td></tr>`}).join('')}
+</tbody></table></div></div>
+<div class="card"><div class="card-h"><h3>🔥 Monthly Habits</h3></div>
+<div class="tbl-wrap"><table><thead><tr><th style="width:170px">Habit</th>${Array.from({length:31},(_,d)=>`<th class="c" style="padding:6px 3px;font-size:9.5px">${d+1}</th>`).join('')}<th class="c">Total</th></tr></thead><tbody>
+${MHABITS.map((h,i)=>{let c=0;for(let d=0;d<31;d++)if(g(`goals.hab.${i}.${d}`))c++;return`<tr><td class="rowlab" style="font-size:12px">${h}</td>${Array.from({length:31},(_,d)=>`<td class="c" style="padding:3px"><button class="chk sm" style="width:20px;height:20px;border-radius:6px;font-size:10px" data-k="goals.hab.${i}.${d}">${g(`goals.hab.${i}.${d}`)?'✓':''}</button></td>`).join('')}<td class="c"><b style="color:#a5b4fc">${c}</b></td></tr>`}).join('')}
+</tbody></table></div></div>`}
+
+function viewSettings(){const sz=(new Blob([JSON.stringify(state)]).size/1024).toFixed(1);const entries=g('journal.entries')||{};return`
+<div class="hero"><h1>⚙️ Settings — <em>Configuration</em></h1><p>System preferences and data management.</p></div>
+<div class="grid2">
+<div class="card"><div class="card-h"><h3>⚙️ System</h3></div>
+<div class="tbl-wrap"><table><tbody>
+${[['Company','settings.company','MYLIFE OS'],['CEO','settings.ceo','YOU'],['Year','settings.year','2026'],['Wake Time','settings.wake','06:00'],['Sleep Time','settings.sleep','22:00'],['Daily Water','settings.water','8'],['Weekly Budget','settings.budget','3500']].map(([l,k,d])=>`<tr><td class="rowlab" style="width:200px">${l}</td><td><input class="inp" data-k="${k}" value="${g(k)??d}"/></td></tr>`).join('')}
+</tbody></table></div></div>
+<div>
+<div class="card"><div class="card-h"><h3>💾 Data Management</h3></div>
+<p class="muted" style="margin-bottom:14px">Diary: <b style="color:#a5b4fc">${Object.keys(entries).length} entries</b> saved.</p>
+<div style="display:flex;flex-direction:column;gap:10px">
+<button class="btn primary" id="expBtn2">⬇️ Export All Data (.json)</button>
+<button class="btn" id="impBtn2">⬆️ Import Backup</button>
+<button class="btn primary" id="exportJournalAllBtn">📊 Export All Diary to Excel</button>
+<button class="btn danger" id="resetBtn">🗑️ Reset All Data</button>
+</div>
+<div style="margin-top: 15px; padding-top: 15px; border-top: 1px dashed #334155;">
+    <h4 style="font-size: 13px; color: #a5b4fc; margin-bottom: 10px;">📄 Download Reports</h4>
+    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+        <button class="btn primary" onclick="generatePDF()">📄 Generate & Print PDF</button>
+    </div>
+</div>
+</div>
+<div class="card"><div class="card-h"><h3>📊 Storage</h3></div>
+<div class="kv"><span>Data size</span><b>${sz} KB</b></div>
+<div class="kv"><span>Diary entries</span><b>${Object.keys(entries).length}</b></div>
+<div class="kv"><span>Version</span><b>MYLIFE OS v2.0</b></div>
+</div>
+</div></div>`}
+
+const NAV_GROUPS=[
+  {label:'Overview',items:[['dashboard','🏠','Dashboard','Overview']]},
+  {label:'Daily Practice',items:[['journal','📔','Journal','Diary'],['today','📅','Today','Daily plan'],['week','📆','Week','Schedule & review']]},
+  {label:'Trackers',items:[['college','🎓','College','Amity subjects'],['learning','📚','Learning','Skills & knowledge'],['revision','🔄','Revision','Spaced repetition'],['health','💪','Health','Weight, water, gym'],['food','🍽️','Food','Meals & calories'],['money','💰','Money','Income & expenses'],['ceo','👑','CEO','Skills & mindset'],['goals','🎯','Goals','Monthly & yearly']]},
+  {label:'System',items:[['settings','⚙️','Settings','Configuration']]}
+];
+const NAV=NAV_GROUPS.flatMap(g=>g.items);
+const VIEWS={dashboard:viewDashboard,journal:viewJournal,today:viewToday,week:viewWeek,college:viewCollege,learning:viewLearning,revision:viewRevision,health:viewHealth,food:viewFood,money:viewMoney,ceo:viewCEO,goals:viewGoals,settings:viewSettings};
+let current='dashboard';
+
+function buildNav() {
+    let h='';
+    NAV_GROUPS.forEach(grp=>{
+        h+=`<div class="nav-group">${grp.label}</div>`;
+        grp.items.forEach(([id,ico,l])=>{
+            h+=`<a data-view="${id}" class="${id===current?'active':''}"><i>${ico}</i>${l}</a>`
+        })
+    });
+    document.getElementById('nav').innerHTML=h
+}
+
+function render(forceTop = false){
+  const scrollPos = window.scrollY;
+  const v=VIEWS[current];
+  document.getElementById('view').innerHTML=v?v():'';
+  const item=NAV.find(n=>n[0]===current);
+  
+  if(document.getElementById('crumb')) {
+      document.getElementById('crumb').innerHTML = item ? item[2] + '<small id="crumbSub">' + item[3] + '</small>' : '';
+  }
+  
+  document.querySelectorAll('.nav a').forEach(a=>a.classList.toggle('active',a.dataset.view===current));
+  
+  if(forceTop) {
+    window.scrollTo({top:0,behavior:'instant'});
+  } else {
+    window.scrollTo({top:scrollPos,behavior:'instant'});
+  }
+  if(current==='learning')attachFolderSearch();
+}
+
+function go(v){current=v;render(true);document.getElementById('sidebar').classList.remove('open');document.getElementById('overlay').classList.remove('show')}
+
+document.addEventListener('click',e=>{
+  const n=e.target.closest('[data-view]');if(n){go(n.dataset.view);return}
+  const gb=e.target.closest('[data-go]');if(gb){go(gb.dataset.go);return}
+  const jt=e.target.closest('[data-jtab]');if(jt){s('journalUI.tab',jt.dataset.jtab);render();return}
+  const oe=e.target.closest('[data-openentry]');if(oe){s('journalUI.tab','write');s('journalUI.date',oe.dataset.openentry);render();return}
+  const ew=e.target.closest('[data-exportweek]');if(ew){exportWeekExcel(ew.dataset.exportweek);return}
+  if(e.target.id==='exportAllBtn'||e.target.id==='exportJournalAllBtn'){exportAllExcel();return}
+  if(e.target.id==='journalSaveBtn'){s('journalUI.tab','weekly');toast('✅ Entry saved — viewing weekly archive');render();return}
+  if(e.target.id==='journalExportBtn'){const d=g('journalUI.date')||todayISO();exportToExcel(`diary-${d}.xls`,[JOURNAL_HEADERS,journalRowForDate(d)]);toast('✅ Entry exported');return}
+  const b=e.target.closest('.chk[data-k]');if(b){const p=b.dataset.k;const val=!g(p);s(p,val);b.classList.toggle('on',val);b.textContent=val?'✓':'';clearTimeout(b._r);b._r=setTimeout(()=>render(),220);return}
+});
+
+document.addEventListener('input',e=>{
+  const t=e.target;
+  if(t.dataset.range){const p=t.dataset.range;const v=Number(t.value);s(p,v);const out=document.querySelector(`.rngval[data-for="${p}"]`);if(out)out.textContent=v;return}
+  if(t.matches('[data-k]')&&(t.tagName==='INPUT'||t.tagName==='TEXTAREA'||t.tagName==='SELECT')){
+    const p=t.dataset.k;
+    s(p,t.type==='number'?(t.value===''?'':Number(t.value)):t.value);
+    if(p.startsWith('journal.entries.')){
+      const preview=document.getElementById('diaryPreview');
+      if(preview){const date=g('journalUI.date')||todayISO();preview.innerHTML=renderDiaryPreview(date)}
+    }
+  }
+});
+
+document.addEventListener('change',e=>{
+  const t=e.target;
+  if(t.id==='journalDateInput'){s('journalUI.date',t.value);render();return}
+  if(t.matches('[data-k]')&&t.type==='number'){
+    const p=t.dataset.k;
+    if(p.startsWith('money.')||p.startsWith('learning.mod')||p.startsWith('goals.m')||p.startsWith('goals.y')||p.startsWith('food.')||p.startsWith('health.w')||p.startsWith('college.prog'))render();
+  }
+});
+
+document.getElementById('menuBtn').onclick=()=>{document.getElementById('sidebar').classList.toggle('open');document.getElementById('overlay').classList.toggle('show')};
+document.getElementById('overlay').onclick=()=>{document.getElementById('sidebar').classList.remove('open');document.getElementById('overlay').classList.remove('show')};
+function tickClock(){const n=new Date();document.getElementById('clock').innerHTML=`<b>${n.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:true})}</b>${n.toLocaleDateString('en-GB',{weekday:'short',day:'2-digit',month:'short',year:'numeric'})}`}
+setInterval(tickClock,1000);tickClock();
+function exportData(){const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`mylife-os-backup-${todayISO()}.json`;a.click();URL.revokeObjectURL(a.href);toast('✅ Backup downloaded')}
+document.getElementById('exportBtn').onclick=exportData;
+document.getElementById('importBtn').onclick=()=>document.getElementById('fileIn').click();
+document.getElementById('fileIn').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>{try{state=JSON.parse(ev.target.result);localStorage.setItem(KEY,JSON.stringify(state));render();toast('✅ Data imported')}catch(err){toast('❌ Invalid file')}};r.readAsText(f);e.target.value=''};
+document.addEventListener('click',e=>{if(e.target.id==='expBtn2')exportData();if(e.target.id==='impBtn2')document.getElementById('fileIn').click();if(e.target.id==='resetBtn'){if(confirm('Reset ALL data? Cannot be undone.')){localStorage.removeItem(KEY);state={};render();toast('🗑️ Data reset')}}});
+function attachFolderSearch(){const i=document.getElementById('folderSearch');if(!i)return;i.oninput=()=>{const q=i.value.toLowerCase().trim();document.querySelectorAll('#folderTree .tree-row').forEach(r=>{r.style.display=(!q||r.dataset.name.includes(q))?'':'none'})}}
+let pomo={left:25*60,running:false,id:null};
+function pomoRender(){const el=document.getElementById('pomoT');if(!el)return;const m=Math.floor(pomo.left/60),sec=pomo.left%60;el.textContent=`${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`}
+document.addEventListener('click',e=>{if(e.target.id==='pomoStart'){const btn=e.target;if(pomo.running){clearInterval(pomo.id);pomo.running=false;btn.textContent='Start'}else{pomo.running=true;btn.textContent='Pause';pomo.id=setInterval(()=>{pomo.left--;if(pomo.left<=0){clearInterval(pomo.id);pomo.running=false;pomo.left=25*60;const b=document.getElementById('pomoStart');if(b)b.textContent='Start';toast('⏰ 25 min done — take a 5 min break!')}pomoRender()},1000)}}if(e.target.id==='pomoReset'){clearInterval(pomo.id);pomo.running=false;pomo.left=25*60;const b=document.getElementById('pomoStart');if(b)b.textContent='Start';pomoRender()}});
+
+function generatePDF() {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    const clean = (str) => String(str || '').replace(/[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu, '').trim();
+
+    doc.setFontSize(22);
+    doc.setTextColor(40);
+    doc.text("MYLIFE OS - Complete Report", 14, 20);
+    
+    doc.setFontSize(10);
+    doc.setTextColor(100);
+    doc.text("Generated: " + new Date().toLocaleString(), 14, 28);
+    
+    let y = 40;
+
+    doc.setFontSize(14);
+    doc.setTextColor(0);
+    doc.text("1. Diary Entries", 14, y);
+    y += 5;
+
+    const entries = state.journal?.entries || {};
+    const dates = Object.keys(entries).sort().reverse();
+    
+    if(dates.length > 0) {
+        const rows = dates.map(d => [
+            d,
+            clean(entries[d].morning || ''),
+            clean(entries[d].acc || ''),
+            clean(entries[d].learn || '')
+        ]);
+        doc.autoTable({
+            startY: y,
+            head: [['Date', 'Morning', 'Accomplished', 'Learned']],
+            body: rows,
+            theme: 'grid',
+            headStyles: { fillColor: [124, 92, 255] }
+        });
+        y = doc.lastAutoTable.finalY + 15;
+    } else {
+        doc.setFontSize(10);
+        doc.text("No journal entries found.", 14, y);
+        y += 15;
+    }
+
+    if (y > 250) { doc.addPage(); y = 20; }
+    doc.setFontSize(14);
+    doc.text("2. Weekly Habits", 14, y);
+    y += 5;
+
+    const habits = state.today?.habits || {};
+    const habitNames = ['Wake', 'Voice', 'Exercise', 'Knowledge', 'Language', 'College', 'Skill', 'Office', 'Water', 'Journal', 'Read', 'Meditation', 'Sleep', 'No Phone'];
+    const days = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+    
+    const habitRows = [];
+    habitNames.forEach((name, i) => {
+        const row = [name];
+        for(let j=0; j<7; j++) {
+            row.push(habits[i]?.[j] ? 'YES' : '-');
+        }
+        habitRows.push(row);
+    });
+
+    doc.autoTable({
+        startY: y,
+        head: [['Habit', ...days]],
+        body: habitRows,
+        theme: 'grid',
+        styles: { fontSize: 8, halign: 'center' },
+        columnStyles: { 0: { halign: 'left' } },
+        headStyles: { fillColor: [34, 211, 238] }
+    });
+
+    doc.autoPrint();
+    const blobURL = doc.output('bloburl');
+    window.open(blobURL, '_blank');
+}
+
+document.getElementById('downloadPdfBtn').addEventListener('click', generatePDF);
+
+buildNav();render(true);
+</script>
+</body>
+</html>

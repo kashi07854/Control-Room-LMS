@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block body %}
+<h1>Settings</h1>
+<div class="card mb-3">
+  <div class="card-header">Current Configuration</div>
+  <div class="card-body">
+    <table class="table table-sm mb-0">
+      <tr><td>Root Path</td><td class="mono">{{ config.root_path }}</td></tr>
+      <tr><td>Control Dir</td><td class="mono">{{ config.control_dir }}</td></tr>
+      <tr><td>Database</td><td class="mono">{{ config.db_path }}</td></tr>
+      <tr><td>Course Roots</td><td class="mono">{{ config.course_roots|join(', ') }}</td></tr>
+      <tr><td>Server</td><td class="mono">{{ config.host }}:{{ config.port }}</td></tr>
+    </table>
+    <p class="small text-secondary mt-2 mb-0">Edit <span class="mono">config.json</span> and restart to change these.</p>
+  </div>
+</div>
+<div class="card">
+  <div class="card-header">Safety</div>
+  <div class="card-body small">
+    <ul class="mb-0">
+      <li>All writes stay inside <span class="mono">00_CONTROL_ROOM</span></li>
+      <li>Existing Drive files are never modified, moved, or deleted</li>
+      <li>Server binds to <span class="mono">127.0.0.1</span> only</li>
+      <li>Cloud-only files are detected and skipped</li>
+      <li>Missing files are soft-deleted (progress/notes preserved)</li>
+    </ul>
+  </div>
+</div>
+{% endblock %}

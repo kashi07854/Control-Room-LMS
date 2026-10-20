@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en" data-bs-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Control Room</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+<link href="{{ url_for('static', filename='css/app.css') }}" rel="stylesheet">
+</head>
+<body>
+<div class="app-layout">
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="brand-container">
+      <div class="brand-icon"><i class="bi bi-hexagon-fill"></i></div>
+      <div class="brand-text">
+        <span class="brand-title">CONTROL ROOM</span>
+        <span class="brand-sub">LIFE OS</span>
+      </div>
+    </div>
+    
+    <div class="nav-section">MAIN MENU</div>
+    <nav class="nav-menu">
+      <a href="/" class="{{ 'active' if request.path=='/' }}">
+        <i class="bi bi-grid-1x2-fill"></i> Dashboard
+      </a>
+      <a href="/browse" class="{{ 'active' if request.path=='/browse' }}">
+        <i class="bi bi-folder-fill"></i> File Browser
+      </a>
+      <a href="/diary_tracker" class="{{ 'active' if request.path=='/diary_tracker' }}">
+        <i class="bi bi-journal-bookmark-fill"></i> Diary Tracker
+      </a>
+      <a href="/folder_tree" class="{{ 'active' if request.path=='/folder_tree' }}">
+        <i class="bi bi-diagram-3-fill"></i> Folder Tree
+      </a>
+      <a href="/habit_tracker" class="{{ 'active' if request.path=='/habit_tracker' }}">
+        <i class="bi bi-activity"></i> Habit Tracker
+      </a>
+      <a href="/chronodeck" class="{{ 'active' if request.path=='/chronodeck' }}">
+        <i class="bi bi-clock-history"></i> ChronoDeck
+      </a>
+      <a href="/ai" class="{{ 'active' if request.path=='/ai' }}">
+        <i class="bi bi-robot"></i> Local AI
+      </a>
+    </nav>
+
+    <div class="nav-section mt-4">PREFERENCES</div>
+    <nav class="nav-menu">
+      <a href="#" onclick="toggleTheme();return false;" class="theme-link">
+        <i class="bi bi-moon-stars-fill" id="themeIcon"></i> <span id="themeLabel">Light Mode</span>
+      </a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="user-card">
+        <div class="avatar">CR</div>
+        <div class="user-info">
+          <div class="name">Local User</div>
+          <div class="path">G:\My Drive</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <main class="main-content">
+    <header class="topbar">
+      <div class="breadcrumbs">
+        {% block breadcrumbs %}Workspace / Dashboard{% endblock %}
+      </div>
+      <div class="top-actions">
+        <button class="btn-scan" onclick="startScan()">
+          <i class="bi bi-arrow-repeat"></i> Scan Drive
+        </button>
+      </div>
+    </header>
+    <div class="content-body">
+      {% block body %}{% endblock %}
+    </div>
+  </main>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+  function applyTheme(theme) {
+    document.documentElement.setAttribute('data-bs-theme', theme);
+    const icon = document.getElementById('themeIcon');
+    const label = document.getElementById('themeLabel');
+    if(theme === 'dark') {
+      icon.className = 'bi bi-sun-fill';
+      label.textContent = 'Light Mode';
+    } else {
+      icon.className = 'bi bi-moon-stars-fill';
+      label.textContent = 'Dark Mode';
+    }
+  }
+  function toggleTheme() {
+    const current = document.documentElement.getAttribute('data-bs-theme') || 'dark';
+    const next = current === 'dark' ? 'light' : 'dark';
+    localStorage.setItem('cr_theme', next);
+    applyTheme(next);
+  }
+  applyTheme(localStorage.getItem('cr_theme') || 'dark');
+
+  async function startScan() {
+    const btn = event.target.closest('.btn-scan');
+    btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Scanning...';
+    await fetch('/api/scan', {method: 'POST'});
+    setInterval(async () => {
+        const res = await fetch('/api/scan_status');
+        const s = await res.json();
+        if(!s.running) location.reload();
+        else btn.innerHTML = `<i class="bi bi-arrow-repeat"></i> ${s.done} items...`;
+    }, 1500);
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block breadcrumbs %}Workspace / Folder Tree{% endblock %}
+{% block body %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h2 class="h4 mb-0 fw-bold"><i class="bi bi-diagram-3 text-primary me-2"></i>Master Folder Tree</h2>
+</div>
+
+{% if error %}
+<div class="alert alert-danger">{{ error }}</div>
+{% else %}
+<div class="table-container">
+  <table class="table table-hover custom-table align-middle mb-0">
+    <thead>
+      <tr><th>Category</th><th>Folder Name</th><th>Level</th><th class="text-end">Action</th></tr>
+    </thead>
+    <tbody>
+      {% for f in folders %}
+      <tr>
+        <td class="fw-semibold text-muted">{{ f.category }}</td>
+        <td>{{ f.name }}</td>
+        <td><span class="badge bg-secondary">L{{ f.level }}</span></td>
+        <td class="text-end"><a href="{{ f.link }}" class="btn btn-sm btn-primary"><i class="bi bi-folder-symlink"></i> Open</a></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+{% endblock %}

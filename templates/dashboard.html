@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block breadcrumbs %}Workspace / Dashboard{% endblock %}
+{% block body %}
+<div class="d-flex justify-content-between align-items-end mb-4">
+  <div>
+    <h1 class="fw-bold mb-1" style="font-size: 28px;">Welcome to Control Room</h1>
+    <p class="text-muted mb-0" style="font-size: 14px;">Your central hub to manage Life OS, files, and daily tracking.</p>
+  </div>
+  <div class="text-end">
+    <div class="text-muted" style="font-size: 12px;" id="currentDate">Date</div>
+  </div>
+</div>
+
+<div class="dashboard-grid mt-4">
+  <!-- File Browser -->
+  <a href="/browse" class="menu-card">
+    <div class="menu-icon" style="background: rgba(234, 179, 8, 0.15); color: #eab308;">
+      <i class="bi bi-folder-fill"></i>
+    </div>
+    <div class="menu-title">File Browser</div>
+    <div class="menu-desc">Explore all your files, open documents, and navigate through Google Drive folders directly from the app.</div>
+  </a>
+
+  <!-- Diary Tracker -->
+  <a href="/diary_tracker" class="menu-card">
+    <div class="menu-icon" style="background: rgba(34, 211, 238, 0.15); color: #22d3ee;">
+      <i class="bi bi-journal-bookmark-fill"></i>
+    </div>
+    <div class="menu-title">Diary Tracker</div>
+    <div class="menu-desc">Your personal MYLIFE OS. Track habits, goals, health, and write formatted daily diary entries.</div>
+  </a>
+
+  <!-- Folder Tree -->
+  <a href="/folder_tree" class="menu-card">
+    <div class="menu-icon" style="background: rgba(16, 185, 129, 0.15); color: #10b981;">
+      <i class="bi bi-diagram-3-fill"></i>
+    </div>
+    <div class="menu-title">Folder Tree</div>
+    <div class="menu-desc">A high-level hierarchical view of your primary learning folders, mapped directly from your Excel sheet.</div>
+  </a>
+
+  <!-- Habit Tracker -->
+  <a href="/habit_tracker" class="menu-card">
+    <div class="menu-icon" style="background: rgba(236, 72, 153, 0.15); color: #ec4899;">
+      <i class="bi bi-activity"></i>
+    </div>
+    <div class="menu-title">Habit Tracker</div>
+    <div class="menu-desc">Visualize your progress, streaks, and daily habit metrics with the integrated tracker.</div>
+  </a>
+
+  <!-- ChronoDeck -->
+  <a href="/chronodeck" class="menu-card">
+    <div class="menu-icon" style="background: rgba(168, 85, 247, 0.15); color: #a855f7;">
+      <i class="bi bi-clock-history"></i>
+    </div>
+    <div class="menu-title">ChronoDeck</div>
+    <div class="menu-desc">Advanced clock, alarms, timers, and world time. Manage your time with futuristic styles.</div>
+  </a>
+
+  <!-- Local AI -->
+  <a href="/ai" class="menu-card">
+    <div class="menu-icon" style="background: rgba(124, 92, 255, 0.15); color: #7c5cff;">
+      <i class="bi bi-robot"></i>
+    </div>
+    <div class="menu-title">Local AI</div>
+    <div class="menu-desc">Chat with your personal AI assistant. Attach PDFs or Excel files to get summaries and answers instantly.</div>
+  </a>
+</div>
+
+<script>
+  const d = new Date();
+  document.getElementById('currentDate').textContent = d.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+</script>
+{% endblock %}

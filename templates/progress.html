@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block body %}
+<h1>Learning Progress</h1>
+{% if rows %}
+<table class="table table-sm">
+  <thead><tr><th>Item</th><th>Status</th><th>%</th><th>Bar</th></tr></thead>
+  <tbody>
+    {% for r in rows %}
+    <tr>
+      <td><a href="/unit/{{ r.id }}">{{ r.name }}</a></td>
+      <td>
+        <select class="form-select form-select-sm" style="width:150px" onchange="updateProgress({{ r.id }}, this.value)">
+          <option value="not_started" {{ 'selected' if r.status=='not_started' }}>Not Started</option>
+          <option value="in_progress" {{ 'selected' if r.status=='in_progress' }}>In Progress</option>
+          <option value="completed"   {{ 'selected' if r.status=='completed' }}>Completed</option>
+        </select>
+      </td>
+      <td>{{ r.percent }}%</td>
+      <td><div class="progress" style="width:120px"><div class="progress-bar" style="width:{{ r.percent }}%"></div></div></td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}<div class="alert alert-info">No items yet. Run a scan.</div>{% endif %}
+
+<script>
+async function updateProgress(id, status){
+  let percent = status === 'completed' ? 100 : status === 'not_started' ? 0 : 50;
+  const j = await api('/api/progress', {item_id: id, status: status, percent: percent});
+  if(j) location.reload();
+}
+</script>
+{% endblock %}

@@ -1,0 +1,104 @@
+﻿{% extends "base.html" %}
+{% block breadcrumbs %}Workspace / Weekly Planner{% endblock %}
+{% block body %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h2 class="h4 mb-0 fw-bold"><i class="bi bi-file-earmark-spreadsheet text-success me-2"></i>Life OS Excel Viewer</h2>
+  <form method="get" class="d-flex gap-2">
+    <select name="sheet" class="form-select form-select-sm" style="width: 250px;" onchange="this.form.submit()">
+      {% for s in sheets %}
+        <option value="{{ s }}" {{ 'selected' if s == current_sheet }}>{{ s }}</option>
+      {% endfor %}
+    </select>
+  </form>
+</div>
+
+{% if error %}
+<div class="alert alert-danger">{{ error }}</div>
+{% else %}
+<div class="alert alert-info py-2 d-flex align-items-center">
+    <i class="bi bi-info-circle me-2"></i> 
+    You are now editing the real Excel file. Click on any cell to edit. Changes are auto-saved when you click away.
+</div>
+
+<div class="excel-container">
+  <table class="table table-bordered excel-table">
+    <tbody>
+      {% for row in rows %}
+      <tr>
+        {% for cell in row %}
+        <td contenteditable="true" 
+            onblur="saveCell(this, {{ loop.index0 }}, {{ loop.index0 }}, '{{ current_sheet }}')"
+            class="{{ 'header-row' if loop.parent.loop.index0 == 0 else '' }}">
+          {{ cell if cell is not none else '' }}
+        </td>
+        {% endfor %}
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<script>
+async function saveCell(el, rowIdx, colIdx, sheetName) {
+    const newValue = el.innerText.trim();
+    
+    // Save indicator
+    el.style.backgroundColor = '#fef08a'; // Yellow highlight while saving
+    
+    try {
+        const res = await fetch('/api/save_excel_cell', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ sheet: sheetName, row: rowIdx, col: colIdx, value: newValue })
+        });
+        const data = await res.json();
+        if (data.ok) {
+            el.style.backgroundColor = '#dcfce7'; // Green on success
+            setTimeout(() => el.style.backgroundColor = '', 1000);
+        } else {
+            alert('Failed to save: ' + data.error);
+            el.style.backgroundColor = '#fecaca'; // Red on error
+        }
+    } catch (e) {
+        alert('Network error while saving');
+    }
+}
+</script>
+
+<style>
+.excel-container {
+    overflow: auto;
+    max-height: calc(100vh - 200px);
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    background: #ffffff;
+}
+.excel-table {
+    margin: 0;
+    font-size: 13px;
+    border-collapse: collapse;
+}
+.excel-table td {
+    padding: 8px 12px;
+    min-width: 120px;
+    max-width: 300px;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    border: 1px solid #e2e8f0;
+    outline: none;
+}
+.excel-table td:focus {
+    background-color: #eff6ff;
+    box-shadow: inset 0 0 0 2px #3b82f6;
+}
+.excel-table td.header-row {
+    background-color: #f8fafc;
+    font-weight: 600;
+    color: #1e293b;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+</style>
+{% endif %}
+{% endblock %}

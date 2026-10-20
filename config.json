@@ -1,0 +1,10 @@
+{
+  "root_path": "G:\\My Drive",
+  "control_dir": "G:\\My Drive\\00_CONTROL_ROOM",
+  "db_path": "G:\\My Drive\\00_CONTROL_ROOM\\data\\index.db",
+  "course_roots": ["80_learning_training", "02_Education_and_Learning"],
+  "exclude_names": ["00_CONTROL_ROOM", "$RECYCLE.BIN", "System Volume Information", ".git", "node_modules", "__MACOSX", "desktop.ini"],
+  "host": "127.0.0.1",
+  "port": 5000,
+  "page_size": 500
+}

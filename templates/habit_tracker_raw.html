@@ -1,0 +1,1197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Life Habit Tracker — Full 60-Year Account</title>
+<style>
+:root{--bg:#0a0e1c;--card:#141a2e;--card2:#1b2340;--line:#26304f;--txt:#e8ecf7;--mut:#8b95b5;--acc:#6c8cff;--acc2:#a78bfa;--ok:#34d399;--warn:#fbbf24;--bad:#f87171;--cyan:#22d3ee;--gold:#fbbf24}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:radial-gradient(1200px 600px at 8% -10%,#1a2450 0%,transparent 60%),radial-gradient(900px 500px at 110% 5%,#2a1a4a 0%,transparent 55%),var(--bg);color:var(--txt);min-height:100vh;padding-bottom:70px;-webkit-font-smoothing:antialiased}
+.top{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:14px 22px;flex-wrap:wrap;border-bottom:1px solid var(--line);background:rgba(10,14,28,.75);backdrop-filter:blur(12px);position:sticky;top:0;z-index:50}
+.brand{display:flex;align-items:center;gap:12px}
+.logo{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;font-size:20px;background:linear-gradient(135deg,var(--acc),var(--acc2));box-shadow:0 8px 24px rgba(108,140,255,.35)}
+.brand h1{font-size:16px;font-weight:700;letter-spacing:.2px}
+.brand p{font-size:11.5px;color:var(--mut);margin-top:2px}
+.top-right{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.audio-ctrl{display:flex;gap:8px;align-items:center;background:var(--card);border:1px solid var(--line);padding:6px 10px;border-radius:999px}
+.audio-status{font-size:11px;font-weight:700;padding:4px 9px;border-radius:99px;background:rgba(248,113,113,.13);color:#f87171;border:1px solid rgba(248,113,113,.3);white-space:nowrap}
+.audio-status.on{background:rgba(52,211,153,.14);color:var(--ok);border-color:rgba(52,211,153,.35)}
+.music-btn{width:34px;height:34px;border-radius:50%;border:1px solid var(--line);background:var(--card2);color:var(--txt);cursor:pointer;font-size:15px;display:grid;place-items:center;transition:.18s;font-family:inherit;padding:0}
+.music-btn:hover{transform:scale(1.08);border-color:var(--acc)}
+.music-btn.playing{background:linear-gradient(135deg,var(--acc),var(--acc2));border-color:transparent;animation:musicPulse 1.2s ease-in-out infinite}
+@keyframes musicPulse{0%,100%{box-shadow:0 0 0 0 rgba(108,140,255,.5)}50%{box-shadow:0 0 0 8px rgba(108,140,255,0)}}
+.vol-wrap{display:flex;align-items:center;gap:6px}
+.vol-wrap span{font-size:13px;color:var(--mut)}
+input[type=range]{-webkit-appearance:none;appearance:none;width:70px;height:5px;background:var(--line);border-radius:99px;outline:none;padding:0;border:none}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;background:linear-gradient(135deg,var(--acc),var(--acc2));border-radius:50%;cursor:pointer;box-shadow:0 2px 8px rgba(108,140,255,.5)}
+input[type=range]::-moz-range-thumb{width:14px;height:14px;background:var(--acc);border:none;border-radius:50%;cursor:pointer}
+.unlock-overlay{position:fixed;inset:0;background:rgba(5,8,18,.88);backdrop-filter:blur(12px);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;cursor:pointer;transition:opacity .4s}
+.unlock-overlay.hide{opacity:0;pointer-events:none}
+.unlock-box{max-width:480px;text-align:center;background:linear-gradient(135deg,#1a2450,#2a1a4a);border:1px solid #43406b;border-radius:22px;padding:44px 34px;box-shadow:0 30px 80px rgba(0,0,0,.7)}
+.unlock-box .big-icon{font-size:70px;margin-bottom:16px;filter:drop-shadow(0 8px 24px rgba(108,140,255,.5));animation:pulse 1.6s infinite}
+.unlock-box h2{font-size:22px;margin-bottom:12px;background:linear-gradient(90deg,#fff,#a9bcff);-webkit-background-clip:text;background-clip:text;color:transparent}
+.unlock-box p{color:#8b95b5;font-size:14px;line-height:1.65;margin-bottom:22px}
+.unlock-btn{background:linear-gradient(135deg,#6c8cff,#a78bfa);color:#fff;border:none;padding:16px 40px;border-radius:14px;font-size:16px;font-weight:700;cursor:pointer;font-family:inherit;box-shadow:0 12px 34px rgba(108,140,255,.45);transition:.2s}
+.unlock-btn:hover{transform:translateY(-2px)}
+.unlock-note{margin-top:16px;font-size:12px;color:#5b6688}
+.master-bar{background:radial-gradient(700px 250px at 15% 0%,rgba(248,113,113,.13),transparent 60%),radial-gradient(700px 250px at 85% 0%,rgba(52,211,153,.10),transparent 60%),linear-gradient(180deg,#0c1122,#0a0e1c);border-bottom:1px solid var(--line);padding:14px 22px 16px;position:relative}
+.master-bar::after{content:'';position:absolute;left:0;right:0;bottom:0;height:2px;background:linear-gradient(90deg,#ff5a5a,#fbbf24,#34d399,#22d3ee,#6c8cff,#a78bfa,#ff5a5a);background-size:250% 100%;animation:rainbowSlide 5s linear infinite}
+@keyframes rainbowSlide{0%{background-position:0% 0}100%{background-position:250% 0}}
+.master-inner{max-width:1180px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr 1fr 1.25fr 220px;gap:12px;align-items:stretch}
+@media(max-width:1080px){.master-inner{grid-template-columns:1fr 1fr 1fr}.mc-passed{grid-column:span 2}}
+@media(max-width:700px){.master-inner{grid-template-columns:1fr 1fr}.mc-passed{grid-column:span 2}.mc-cal{grid-column:span 2}}
+@media(max-width:480px){.master-inner{grid-template-columns:1fr}}
+.mc-box{background:rgba(14,20,40,.72);border:1px solid var(--line);border-radius:14px;padding:10px 13px;display:flex;flex-direction:column;justify-content:flex-start;min-width:0;position:relative;overflow:hidden}
+.mc-lbl{font-size:9.5px;text-transform:uppercase;letter-spacing:1.2px;color:var(--mut);font-weight:700;margin-bottom:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mc-analog{border-color:rgba(34,211,238,.4);background:linear-gradient(135deg,rgba(34,211,238,.08),rgba(14,20,40,.75));align-items:center}
+.mc-analog .mc-lbl{align-self:flex-start;color:#7ee0ef}
+.analog{width:100%;height:78px;max-width:96px;display:block;margin:0 auto}
+.analog .mk{fill:#3d4770}.analog .mk.hr{fill:#8aa4ff}
+.analog .hand-hour{stroke:#e8ecf7;stroke-width:3.2;stroke-linecap:round}
+.analog .hand-min{stroke:#8aa4ff;stroke-width:2.2;stroke-linecap:round}
+.analog .hand-sec{stroke:#ff5a5a;stroke-width:1;stroke-linecap:round;filter:drop-shadow(0 0 3px rgba(255,90,90,.6))}
+.analog .center-ring{fill:#0a0e1c;stroke:#8aa4ff;stroke-width:.8}
+.analog .center-dot{fill:#ff5a5a}
+.analog-digital{display:flex;gap:5px;align-items:baseline;font-variant-numeric:tabular-nums;margin-top:5px;justify-content:center}
+.analog-digital #analogDigital{font-size:15px;font-weight:800;color:#22d3ee;text-shadow:0 0 14px rgba(34,211,238,.45)}
+.analog-ampm{font-size:10px;color:#7ee0ef;font-weight:700}
+.mc-month{border-color:rgba(108,140,255,.4);background:linear-gradient(135deg,rgba(108,140,255,.08),rgba(14,20,40,.75))}
+.mc-month .mc-lbl{color:#a9bcff}
+.mc-year{border-color:rgba(167,139,250,.4);background:linear-gradient(135deg,rgba(167,139,250,.08),rgba(14,20,40,.75))}
+.mc-year .mc-lbl{color:#c4b5fd}
+.ring-wrap{position:relative;display:flex;align-items:center;justify-content:center;flex:1;min-height:78px}
+.ring-svg{width:100%;height:78px;max-width:96px;display:block}
+.ring-bg{fill:none;stroke:#1e2545;stroke-width:7}
+.ring-fg{fill:none;stroke-width:7;stroke-linecap:round;transition:stroke-dashoffset .4s linear}
+.ring-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none}
+.ring-num{font-size:22px;font-weight:800;font-variant-numeric:tabular-nums;line-height:1}
+.mc-month .ring-num{color:#22d3ee;text-shadow:0 0 12px rgba(34,211,238,.5)}
+.mc-year .ring-num{color:#c4b5fd;text-shadow:0 0 12px rgba(167,139,250,.5)}
+.ring-tot{font-size:10px;color:#8b95b5;font-weight:700;margin-top:2px}
+.ring-label{text-align:center;font-size:11px;font-weight:700;color:#a9bcff;margin-top:3px}
+.mc-year .ring-label{color:#c4b5fd}
+.mc-passed{border:1px solid rgba(255,90,90,.55);background:linear-gradient(135deg,rgba(248,113,113,.14),rgba(14,20,40,.8));box-shadow:0 0 0 1px rgba(248,113,113,.12),inset 0 0 26px rgba(248,113,113,.07);justify-content:center}
+.mc-passed .mc-lbl{color:#ff8a8a;font-weight:800}
+.mc-big{font-size:20px;font-weight:800;font-variant-numeric:tabular-nums;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mc-passed .mc-big{font-size:15.5px;color:#ff5a5a;text-shadow:0 0 22px rgba(255,90,90,.6),0 0 42px rgba(255,90,90,.28);animation:redPulse 2s ease-in-out infinite}
+.mc-passed .mc-sub{color:#e09090;font-size:10.5px;margin-top:3px;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+@keyframes redPulse{0%,100%{opacity:1}50%{opacity:.78}}
+.mc-cal{padding:9px 11px;border-color:rgba(167,139,250,.3)}
+.mc-cal .mc-lbl{text-align:center;margin-bottom:7px;color:#9eb0d8}
+.mini-cal{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;font-size:10px;text-align:center;line-height:1}
+.mini-cal .dow{color:#6b78a0;font-weight:800;padding:2px 0;font-size:8.5px}
+.mini-cal .day{padding:4px 0;border-radius:5px;color:#b0b8d8;font-weight:600;font-size:10px}
+.mini-cal .day.today{background:linear-gradient(135deg,#ff5a5a,#f87171);color:#fff;font-weight:800;box-shadow:0 0 12px rgba(255,90,90,.55)}
+.mini-cal .day.empty{color:transparent}
+
+.tabs{display:flex;gap:8px;padding:14px 22px;overflow-x:auto;scrollbar-width:none;max-width:1180px;margin:0 auto}
+.tabs::-webkit-scrollbar{display:none}
+.tab-btn{white-space:nowrap;background:var(--card);color:var(--mut);border:1px solid var(--line);padding:9px 16px;border-radius:11px;font-size:13.5px;font-weight:600;cursor:pointer;transition:.18s;font-family:inherit}
+.tab-btn:hover{color:var(--txt);border-color:#3a4670}
+.tab-btn.active{background:linear-gradient(135deg,var(--acc),var(--acc2));color:#fff;border-color:transparent;box-shadow:0 6px 20px rgba(108,140,255,.3)}
+.tab-btn.gold.active{background:linear-gradient(135deg,#fbbf24,#f472b6);box-shadow:0 6px 20px rgba(251,191,36,.4)}
+.tab-btn.rich.active{background:linear-gradient(135deg,#34d399,#22d3ee);box-shadow:0 6px 20px rgba(52,211,153,.4)}
+main{max-width:1180px;margin:0 auto;padding:6px 22px}
+.panel{display:none;animation:fade .25s}
+.panel.active{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.card{background:linear-gradient(180deg,rgba(27,35,64,.85),rgba(20,26,46,.95));border:1px solid var(--line);border-radius:18px;padding:20px;margin-bottom:16px}
+.card h2{font-size:15px;font-weight:700;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.card h2 small{font-weight:500;color:var(--mut);font-size:12px}
+.grid{display:grid;gap:14px}
+.g2{grid-template-columns:repeat(auto-fit,minmax(280px,1fr))}
+.g3{grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
+.g4{grid-template-columns:repeat(auto-fit,minmax(160px,1fr))}
+.hero{background:linear-gradient(135deg,#1e2a55,#2a1f4d 60%,#1a2340);border-color:#33406b}
+.hero-top{display:flex;justify-content:space-between;align-items:flex-end;gap:14px;flex-wrap:wrap;margin-bottom:14px}
+.label{font-size:11.5px;text-transform:uppercase;letter-spacing:1.3px;color:var(--mut);font-weight:700}
+.big{font-size:34px;font-weight:800;line-height:1.1;margin-top:6px;background:linear-gradient(90deg,#fff,#a9bcff);-webkit-background-clip:text;background-clip:text;color:transparent}
+.pct{font-size:30px;font-weight:800;color:var(--cyan);font-variant-numeric:tabular-nums}
+.bar{height:11px;background:#0d1428;border-radius:99px;overflow:hidden;border:1px solid var(--line)}
+.fill{height:100%;border-radius:99px;background:linear-gradient(90deg,var(--acc),var(--cyan));transition:width .5s}
+.fill.ok{background:linear-gradient(90deg,#34d399,#22d3ee)}
+.fill.warn{background:linear-gradient(90deg,#fbbf24,#fb923c)}
+.hero-sub{display:flex;gap:18px;flex-wrap:wrap;margin-top:12px;font-size:12.5px;color:var(--mut)}
+.hero-sub b{color:var(--txt)}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:15px;padding:15px 16px}
+.stat .k{font-size:11.5px;color:var(--mut);font-weight:700;letter-spacing:.5px;text-transform:uppercase}
+.stat .v{font-size:21px;font-weight:800;margin-top:7px;font-variant-numeric:tabular-nums}
+.stat .s{font-size:11.5px;color:var(--mut);margin-top:4px}
+.v.blue{color:#8aa4ff}.v.cyan{color:var(--cyan)}.v.green{color:var(--ok)}
+.v.amber{color:var(--warn)}.v.red{color:var(--bad)}.v.purple{color:#c4b5fd}.v.gold{color:var(--gold)}
+.live-card{background:linear-gradient(135deg,#2a1f4d,#1e2a55 50%,#1a2340);border:1px solid #43406b;position:relative;overflow:hidden}
+.live-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--cyan),var(--acc),var(--acc2),var(--cyan));background-size:200% 100%;animation:rainbowSlide 4s linear infinite}
+.live-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin-top:14px}
+.live-box{background:rgba(10,14,28,.6);border:1px solid var(--line);border-radius:14px;padding:18px 16px;text-align:center;position:relative;overflow:hidden}
+.live-box .lbl{font-size:10.5px;text-transform:uppercase;letter-spacing:1.5px;color:var(--mut);font-weight:700;margin-bottom:10px}
+.live-box .num{font-size:26px;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:.5px;line-height:1.15}
+.live-box .num.small{font-size:20px}
+.live-box .sub{font-size:11px;color:var(--mut);margin-top:8px}
+.live-box.lived{border-color:rgba(34,211,238,.35)}
+.live-box.lived .num{color:var(--cyan);text-shadow:0 0 20px rgba(34,211,238,.4)}
+.live-box.remain{border-color:rgba(52,211,153,.35)}
+.live-box.remain .num{color:var(--ok);text-shadow:0 0 20px rgba(52,211,153,.4)}
+.live-box.since-day{border-color:rgba(167,139,250,.35)}
+.live-box.since-day .num{color:#c4b5fd}
+.tick-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--ok);margin-right:6px;vertical-align:middle;animation:pulse 1s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.25}}
+.form-grid{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(180px,1fr))}
+input,select,textarea{width:100%;background:#0e1428;border:1px solid var(--line);color:var(--txt);padding:11px 13px;border-radius:11px;font-size:13.5px;font-family:inherit;outline:none;transition:.15s}
+input:focus,select:focus,textarea:focus{border-color:var(--acc);box-shadow:0 0 0 3px rgba(108,140,255,.14)}
+input::placeholder{color:#5b6688}
+option{background:#0e1428}
+.btn{border:none;padding:11px 18px;border-radius:11px;font-size:13.5px;font-weight:700;cursor:pointer;font-family:inherit;transition:.16s;background:var(--card2);color:var(--txt);border:1px solid var(--line);white-space:nowrap}
+.btn:hover{transform:translateY(-1px)}
+.btn.primary{background:linear-gradient(135deg,var(--acc),var(--acc2));color:#fff;border-color:transparent}
+.btn.ok{background:rgba(52,211,153,.13);color:var(--ok);border-color:rgba(52,211,153,.35)}
+.btn.bad{background:rgba(248,113,113,.11);color:var(--bad);border-color:rgba(248,113,113,.3)}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn.sm{padding:8px 13px;font-size:12.5px}
+.habit{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:17px;margin-bottom:13px;position:relative;overflow:hidden}
+.habit.fixed{border-color:rgba(52,211,153,.45)}
+.habit::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--acc)}
+.habit.fixed::before{background:var(--ok)}
+.h-head{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:flex-start}
+.h-title{font-size:15.5px;font-weight:700}
+.chip{font-size:10.5px;font-weight:700;padding:4px 9px;border-radius:99px;background:#222c4d;color:#9fb0e0;border:1px solid var(--line)}
+.chip.ok{background:rgba(52,211,153,.14);color:var(--ok);border-color:rgba(52,211,153,.3)}
+.chip.warn{background:rgba(251,191,36,.13);color:var(--warn);border-color:rgba(251,191,36,.3)}
+.chip.gold{background:rgba(251,191,36,.15);color:var(--gold);border-color:rgba(251,191,36,.4)}
+.h-row{font-size:12.8px;color:var(--mut);margin-top:8px;line-height:1.55}
+.h-row b{color:#c9d3f0;font-weight:600}
+.h-bars{margin-top:14px;display:grid;gap:9px}
+.bline{display:flex;justify-content:space-between;font-size:11.5px;color:var(--mut);margin-bottom:5px}
+.h-stats{display:flex;gap:18px;flex-wrap:wrap;margin-top:13px;font-size:12px;color:var(--mut)}
+.h-stats b{color:var(--txt);font-size:14px;font-weight:700}
+.h-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+.logrow{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:11px 14px;border-radius:12px;background:#111730;border:1px solid var(--line);margin-bottom:8px}
+.logrow .l{display:flex;align-items:center;gap:11px;min-width:0}
+.ltag{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;font-size:14px;flex:none}
+.ltag.work{background:rgba(52,211,153,.14)}.ltag.waste{background:rgba(248,113,113,.13)}
+.lmain{font-size:13px;font-weight:600}
+.lsub{font-size:11px;color:var(--mut);margin-top:2px}
+.lmin{font-size:13.5px;font-weight:800}
+.empty{text-align:center;color:var(--mut);padding:26px 10px;font-size:13px}
+.phase{background:var(--card);border:1px solid var(--line);border-radius:15px;padding:16px;margin-bottom:12px}
+.phase-top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:11px}
+.phase-name{display:flex;align-items:center;gap:10px;font-size:14.5px;font-weight:700}
+.pdot{width:11px;height:11px;border-radius:50%;flex:none}
+.phase-inputs{display:grid;grid-template-columns:1.6fr .7fr .7fr 1.6fr auto;gap:8px;align-items:center}
+@media(max-width:760px){.phase-inputs{grid-template-columns:1fr 1fr}}
+.pill{font-size:11px;padding:4px 9px;border-radius:99px;background:#0e1428;border:1px solid var(--line);color:var(--mut)}
+.note{font-size:12px;color:var(--mut);line-height:1.6}
+.divider{height:1px;background:var(--line);margin:16px 0}
+.legend-hero{background:linear-gradient(135deg,#3d2a1e,#4a1f2e 55%,#1e2a55);border-color:#5a3a4a;position:relative;overflow:hidden}
+.legend-hero::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 20% 10%,rgba(251,191,36,.15),transparent 60%),radial-gradient(circle at 80% 90%,rgba(244,114,182,.12),transparent 60%);pointer-events:none}
+.legend-hero h2{font-size:24px;font-weight:800;background:linear-gradient(90deg,#fbbf24,#f472b6,#a78bfa);-webkit-background-clip:text;background-clip:text;color:transparent;display:block}
+.legend-hero p{color:#d0c0d8;font-size:13.5px;line-height:1.7;margin-top:8px;position:relative;z-index:1}
+.legend-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px;margin-top:16px}
+.legend-card{background:linear-gradient(180deg,rgba(40,30,60,.75),rgba(20,26,46,.95));border:1px solid #4a3a5a;border-radius:16px;padding:18px;position:relative;overflow:hidden;transition:.2s}
+.legend-card:hover{transform:translateY(-3px);border-color:var(--gold);box-shadow:0 12px 30px rgba(251,191,36,.15)}
+.legend-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px;background:linear-gradient(180deg,var(--gold),var(--acc2))}
+.legend-head{display:flex;gap:12px;align-items:center;margin-bottom:12px}
+.legend-avatar{width:52px;height:52px;border-radius:50%;display:grid;place-items:center;font-size:24px;font-weight:800;background:linear-gradient(135deg,var(--gold),#f472b6);color:#1a0e2e;flex:none}
+.legend-name{font-size:16px;font-weight:800;color:#fff}
+.legend-role{font-size:11.5px;color:var(--gold);margin-top:2px;font-weight:700}
+.legend-stat{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0}
+.legend-stat > div{background:rgba(10,14,28,.6);border:1px solid var(--line);border-radius:10px;padding:9px 10px}
+.legend-stat .k{font-size:9.5px;text-transform:uppercase;color:var(--mut);font-weight:700}
+.legend-stat .v{font-size:15px;font-weight:800;margin-top:4px;color:var(--gold)}
+.legend-quote{font-size:12.5px;color:#c9d3f0;font-style:italic;line-height:1.6;margin-top:10px;padding-left:12px;border-left:2px solid var(--gold)}
+.legend-fact{font-size:11.5px;color:#8b95b5;margin-top:10px;padding-top:10px;border-top:1px dashed var(--line)}
+.legend-fact b{color:#f472b6}
+.legend-badge{position:absolute;top:14px;right:14px;font-size:10px;font-weight:800;padding:3px 8px;border-radius:99px;background:linear-gradient(135deg,var(--gold),#f472b6);color:#1a0e2e}
+.count-stat{background:linear-gradient(135deg,rgba(251,191,36,.12),rgba(244,114,182,.08));border:1px solid rgba(251,191,36,.3);border-radius:16px;padding:20px;text-align:center}
+.count-stat .num{font-size:36px;font-weight:900;background:linear-gradient(90deg,var(--gold),#f472b6);-webkit-background-clip:text;background-clip:text;color:transparent}
+.count-stat .lbl{font-size:12px;color:#d0c0d8;font-weight:700;margin-top:6px}
+.count-stat .sub{font-size:11px;color:var(--mut);margin-top:4px}
+.link-section{background:linear-gradient(180deg,rgba(27,35,64,.85),rgba(20,26,46,.95));border:1px solid var(--line);border-radius:18px;padding:20px;margin-bottom:16px}
+.link-section h2{font-size:15px;font-weight:700;margin-bottom:14px;display:flex;align-items:center;gap:8px;color:#e8ecf7}
+.link-category{margin-bottom:18px}
+.link-category h3{font-size:13px;font-weight:800;color:var(--gold);margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid rgba(251,191,36,.2);display:flex;align-items:center;gap:6px}
+.link-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:8px}
+.link-item{display:flex;align-items:center;gap:8px;padding:9px 12px;background:rgba(10,14,28,.55);border:1px solid var(--line);border-radius:10px;text-decoration:none;color:#b0b8d8;font-size:12px;font-weight:600;transition:.15s;line-height:1.35}
+.link-item:hover{background:rgba(108,140,255,.12);border-color:var(--acc);color:#fff;transform:translateX(3px)}
+.link-item .ico{font-size:14px;flex:none}
+.link-item .src{font-size:9.5px;color:#6b78a0;display:block;margin-top:2px;font-weight:500}
+
+/* ============================================
+   OPPORTUNITIES TAB
+============================================ */
+.opp-hero{background:linear-gradient(135deg,#0d3a2e,#1a4a3a 55%,#1e2a55);border-color:#2a5a4a;position:relative;overflow:hidden}
+.opp-hero::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 20% 10%,rgba(52,211,153,.15),transparent 60%),radial-gradient(circle at 80% 90%,rgba(34,211,238,.12),transparent 60%);pointer-events:none}
+.opp-hero h2{font-size:24px;font-weight:800;background:linear-gradient(90deg,#34d399,#22d3ee,#6c8cff);-webkit-background-clip:text;background-clip:text;color:transparent;display:block}
+.opp-hero p{color:#b8d0c8;font-size:13.5px;line-height:1.7;margin-top:8px;position:relative;z-index:1}
+.filter-bar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.filter-btn{padding:7px 14px;border-radius:99px;border:1px solid var(--line);background:var(--card);color:var(--mut);font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;transition:.15s}
+.filter-btn:hover{color:var(--txt);border-color:#3a4670}
+.filter-btn.active{background:linear-gradient(135deg,#34d399,#22d3ee);color:#fff;border-color:transparent}
+.sector-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:14px}
+.sector{background:linear-gradient(180deg,rgba(30,45,60,.75),rgba(20,26,46,.95));border:1px solid #2a4050;border-radius:16px;padding:18px;position:relative;overflow:hidden;transition:.2s}
+.sector:hover{transform:translateY(-3px);border-color:var(--ok);box-shadow:0 12px 30px rgba(52,211,153,.15)}
+.sector::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px;background:linear-gradient(180deg,var(--ok),var(--cyan))}
+.sector-head{display:flex;gap:12px;align-items:center;margin-bottom:12px}
+.sector-avatar{width:52px;height:52px;border-radius:13px;display:grid;place-items:center;font-size:24px;background:linear-gradient(135deg,var(--ok),var(--cyan));flex:none;box-shadow:0 6px 18px rgba(52,211,153,.35)}
+.sector-name{font-size:16px;font-weight:800;color:#fff}
+.sector-tag{font-size:10.5px;color:var(--ok);margin-top:2px;font-weight:700;letter-spacing:.3px}
+.sector-rank{position:absolute;top:12px;right:12px;font-size:9.5px;font-weight:800;padding:4px 9px;border-radius:99px;background:linear-gradient(135deg,var(--ok),var(--cyan));color:#0a1e28;letter-spacing:.4px}
+.sector-body{font-size:12.5px;color:#b8c8d8;line-height:1.65}
+.sector-body b{color:#d8e0f0}
+.sector-stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0}
+.sector-stats > div{background:rgba(10,14,28,.6);border:1px solid var(--line);border-radius:10px;padding:9px 10px}
+.sector-stats .k{font-size:9.5px;text-transform:uppercase;color:var(--mut);font-weight:700;letter-spacing:.3px}
+.sector-stats .v{font-size:13.5px;font-weight:800;margin-top:4px;color:var(--ok)}
+.sector-examples{margin-top:10px;padding-top:10px;border-top:1px dashed var(--line);font-size:12px;color:#a8b8c8}
+.sector-examples b{color:#22d3ee}
+.sector-tip{margin-top:10px;padding:10px 12px;background:rgba(251,191,36,.08);border-left:3px solid var(--gold);border-radius:8px;font-size:12px;color:#d8c8a8;line-height:1.55}
+.sector-tip b{color:var(--gold)}
+.opp-count-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px}
+.opp-count{background:linear-gradient(135deg,rgba(52,211,153,.12),rgba(34,211,238,.08));border:1px solid rgba(52,211,153,.3);border-radius:16px;padding:18px;text-align:center}
+.opp-count .num{font-size:30px;font-weight:900;background:linear-gradient(90deg,var(--ok),var(--cyan));-webkit-background-clip:text;background-clip:text;color:transparent}
+.opp-count .lbl{font-size:11.5px;color:#b8d0c8;font-weight:700;margin-top:6px}
+.opp-count .sub{font-size:10.5px;color:var(--mut);margin-top:4px}
+</style>
+</head>
+<body>
+
+<div class="unlock-overlay" id="unlockOverlay">
+  <div class="unlock-box">
+    <div class="big-icon">🔊</div>
+    <h2>Click Anywhere to Enable Sound</h2>
+    <p>Deep motivational background music and live tick sound will start.</p>
+    <button class="unlock-btn" id="unlockBtn">▶ Enable Music & Sound</button>
+    <div class="unlock-note">🔒 All data stays on your device</div>
+  </div>
+</div>
+
+<header class="top">
+  <div class="brand">
+    <div class="logo">🕒</div>
+    <div>
+      <h1>Life Habit Tracker</h1>
+      <p id="brandSub">60 Years • Every Second Counted</p>
+    </div>
+  </div>
+  <div class="top-right">
+    <div class="audio-ctrl" title="Audio">
+      <span class="audio-status" id="audioStatus">OFF</span>
+      <button class="music-btn" id="musicBtn" onclick="Audio.toggleMusic()">🎵</button>
+      <div class="vol-wrap"><span>🔊</span><input type="range" id="volSlider" min="0" max="100" value="50" oninput="Audio.setVolume(this.value)"></div>
+      <button class="music-btn" id="tickBtn" onclick="Audio.toggleTick()">🔔</button>
+    </div>
+  </div>
+</header>
+
+<div class="master-bar">
+  <div class="master-inner">
+    <div class="mc-box mc-analog">
+      <div class="mc-lbl">🕐 Current Time</div>
+      <svg class="analog" viewBox="0 0 100 100">
+        <circle cx="50" cy="50" r="46" fill="none" stroke="#1e2545" stroke-width="0.8"/>
+        <g id="analogMarkers"></g>
+        <line id="hourHand" class="hand-hour" x1="50" y1="50" x2="50" y2="30"/>
+        <line id="minHand" class="hand-min" x1="50" y1="50" x2="50" y2="22"/>
+        <line id="secHand" class="hand-sec" x1="50" y1="50" x2="50" y2="16"/>
+        <circle class="center-ring" cx="50" cy="50" r="3"/>
+        <circle class="center-dot" cx="50" cy="50" r="1.5"/>
+      </svg>
+      <div class="analog-digital"><span id="analogDigital">--:--:--</span><span class="analog-ampm" id="analogAmpm">--</span></div>
+    </div>
+    <div class="mc-box mc-month">
+      <div class="mc-lbl">📅 Month Clock</div>
+      <div class="ring-wrap">
+        <svg class="ring-svg" viewBox="0 0 100 100">
+          <defs><linearGradient id="gradMonth" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#22d3ee"/><stop offset="100%" stop-color="#6c8cff"/></linearGradient></defs>
+          <circle class="ring-bg" cx="50" cy="50" r="38"/>
+          <circle id="monthRing" class="ring-fg" cx="50" cy="50" r="38" transform="rotate(-90 50 50)" stroke="url(#gradMonth)"/>
+        </svg>
+        <div class="ring-center"><div class="ring-num" id="monthDayNum">--</div><div class="ring-tot" id="monthDayTot">/ --</div></div>
+      </div>
+      <div class="ring-label" id="monthName">—</div>
+    </div>
+    <div class="mc-box mc-year">
+      <div class="mc-lbl">📆 Year Clock</div>
+      <div class="ring-wrap">
+        <svg class="ring-svg" viewBox="0 0 100 100">
+          <defs><linearGradient id="gradYear" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#a78bfa"/><stop offset="100%" stop-color="#f472b6"/></linearGradient></defs>
+          <circle class="ring-bg" cx="50" cy="50" r="38"/>
+          <circle id="yearRing" class="ring-fg" cx="50" cy="50" r="38" transform="rotate(-90 50 50)" stroke="url(#gradYear)"/>
+        </svg>
+        <div class="ring-center"><div class="ring-num" id="yearDayNum">--</div><div class="ring-tot" id="yearDayTot">/ --</div></div>
+      </div>
+      <div class="ring-label" id="yearLabel">—</div>
+    </div>
+    <div class="mc-box mc-passed">
+      <div class="mc-lbl">⏳ TIME PASSED (since birth)</div>
+      <div class="mc-big" id="mcPassedBig">0y 0m 0d 00:00:00</div>
+      <div class="mc-sub" id="mcPassedSub">—</div>
+    </div>
+    <div class="mc-box mc-cal">
+      <div class="mc-lbl" id="mcCalHeader">Calendar</div>
+      <div class="mini-cal" id="miniCal"></div>
+    </div>
+  </div>
+</div>
+
+<nav class="tabs">
+  <button class="tab-btn active" data-tab="dashboard">📊 Dashboard</button>
+  <button class="tab-btn" data-tab="habits">🎯 Habits</button>
+  <button class="tab-btn" data-tab="time">⏱️ Time</button>
+  <button class="tab-btn" data-tab="phases">🧭 Life Phases</button>
+  <button class="tab-btn gold" data-tab="legends">💎 Success Stories</button>
+  <button class="tab-btn rich" data-tab="opportunities">💰 Opportunities</button>
+  <button class="tab-btn" data-tab="settings">⚙️ Settings</button>
+</nav>
+
+<main>
+  <section id="tab-dashboard" class="panel active">
+    <div class="grid" id="dashTop"></div>
+    <div class="card live-card">
+      <h2><span class="tick-dot"></span> LIVE LIFE CLOCK <small>— ticking every second</small></h2>
+      <div class="live-grid">
+        <div class="live-box lived"><div class="lbl">⏳ Seconds Lived</div><div class="num" id="liveLivedSec">0</div><div class="sub" id="liveLivedSub">—</div></div>
+        <div class="live-box remain"><div class="lbl">💚 Seconds Remaining</div><div class="num" id="liveRemainSec">0</div><div class="sub" id="liveRemainSub">—</div></div>
+        <div class="live-box since-day"><div class="lbl">🌅 Since Midnight</div><div class="num small" id="liveToday">0h 0m 0s</div><div class="sub">today's elapsed</div></div>
+        <div class="live-box since-day"><div class="lbl">📅 Since Last Birthday</div><div class="num small" id="liveBirthday">0d 0h 0m 0s</div><div class="sub">since last birthday</div></div>
+      </div>
+      <div class="note" style="margin-top:14px;text-align:center">🕐 <b>Every second is counting.</b> You have roughly <b id="liveYearsLeft">—</b> years left. Make each second count. 🎯</div>
+    </div>
+    <div class="card"><h2>📈 Work Goal</h2><div id="goalBox"></div></div>
+    <div class="grid g2">
+      <div class="card"><h2>🧭 Progress by Phase</h2><div id="dashPhases"></div></div>
+      <div class="card"><h2>🎯 Habits Status</h2><div id="dashHabits"></div></div>
+    </div>
+  </section>
+
+  <section id="tab-habits" class="panel">
+    <div class="card">
+      <h2>➕ Add New Habit / Mistake</h2>
+      <form onsubmit="App.addHabit(event)" class="form-grid">
+        <input id="hTitle" placeholder="Habit name" required>
+        <input id="hMistake" placeholder="What is the mistake?">
+        <input id="hFix" placeholder="How to practice?">
+        <select id="hCat"><option>Communication</option><option>Patience</option><option>Time</option><option>Health</option><option>Mind</option><option>Other</option></select>
+        <input id="hMin" type="number" min="1" max="600" value="10" placeholder="Minutes/day">
+        <input id="hLock" type="number" min="1" max="60" value="3" placeholder="Lock (months)">
+        <input id="hStart" type="date">
+        <button class="btn primary" type="submit">+ Add</button>
+      </form>
+    </div>
+    <div id="habitList"></div>
+  </section>
+
+  <section id="tab-time" class="panel">
+    <div class="card">
+      <h2>⏱️ Log Time</h2>
+      <form onsubmit="App.addLog(event)" class="form-grid">
+        <select id="lType"><option value="work">✅ Work done</option><option value="waste">❌ Time wasted</option></select>
+        <input id="lMin" type="number" min="1" max="1440" value="15" placeholder="Minutes" required>
+        <input id="lNote" placeholder="What / why">
+        <input id="lDate" type="date">
+        <button class="btn primary" type="submit">+ Log</button>
+      </form>
+    </div>
+    <div class="grid g4" id="timeStats"></div>
+    <div class="grid g2">
+      <div class="card"><h2>❌ Wasted Time</h2><div id="wasteList"></div></div>
+      <div class="card"><h2>✅ Productive Time</h2><div id="workList"></div></div>
+    </div>
+  </section>
+
+  <section id="tab-phases" class="panel">
+    <div class="card">
+      <h2>🧭 Life Phases</h2>
+      <div id="phaseList"></div>
+      <div class="divider"></div>
+      <button class="btn" onclick="App.addPhase()">+ Add Phase</button>
+    </div>
+  </section>
+
+  <section id="tab-legends" class="panel">
+    <div class="card legend-hero">
+      <h2>💎 Legends Who Built Empires</h2>
+      <p>These are the people who didn't just build ONE company — they built empires, invested in 1000+ companies, and changed the world. If they could do it, so can you. 💪</p>
+      <p style="margin-top:10px"><b style="color:#fbbf24">Remember:</b> Every legend started exactly where you are right now — with nothing but a dream and the will to work.</p>
+    </div>
+    <div class="grid g4" id="legendCounters"></div>
+    <div class="card">
+      <h2>🌟 World's Greatest Builders <small>— Legends who built 1000+ companies</small></h2>
+      <div class="legend-grid" id="legendList"></div>
+    </div>
+    <div class="link-section">
+      <h2>📖 Read Their Stories <small>— Click any link to open biography</small></h2>
+      <div class="link-category">
+        <h3>🚀 Elon Musk — Tesla, SpaceX, Neuralink</h3>
+        <div class="link-grid">
+          <a class="link-item" href="https://en.wikipedia.org/wiki/Elon_Musk" target="_blank" rel="noopener"><span class="ico">🌐</span> Wikipedia — Full Biography <span class="src">en.wikipedia.org</span></a>
+          <a class="link-item" href="https://www.britannica.com/money/Elon-Musk" target="_blank" rel="noopener"><span class="ico">📚</span> Britannica — Elon Musk <span class="src">britannica.com</span></a>
+          <a class="link-item" href="https://www.forbes.com/profile/elon-musk/" target="_blank" rel="noopener"><span class="ico">💼</span> Forbes — Profile & Net Worth <span class="src">forbes.com</span></a>
+          <a class="link-item" href="https://www.bbc.co.uk/newsround/57121142" target="_blank" rel="noopener"><span class="ico">📰</span> BBC — Who is Elon Musk? <span class="src">bbc.co.uk</span></a>
+        </div>
+      </div>
+      <div class="link-category">
+        <h3>💰 Warren Buffett — Berkshire Hathaway</h3>
+        <div class="link-grid">
+          <a class="link-item" href="https://www.britannica.com/money/Warren-Edward-Buffett" target="_blank" rel="noopener"><span class="ico">📚</span> Britannica — Full Bio <span class="src">britannica.com</span></a>
+          <a class="link-item" href="https://www.forbes.com/profile/warren-buffett/" target="_blank" rel="noopener"><span class="ico">💼</span> Forbes — Profile <span class="src">forbes.com</span></a>
+          <a class="link-item" href="https://en.wikipedia.org/wiki/Warren_Buffett" target="_blank" rel="noopener"><span class="ico">🌐</span> Wikipedia <span class="src">wikipedia.org</span></a>
+          <a class="link-item" href="https://www.berkshirehathaway.com/" target="_blank" rel="noopener"><span class="ico">🏢</span> Berkshire Official <span class="src">berkshirehathaway.com</span></a>
+        </div>
+      </div>
+      <div class="link-category">
+        <h3>📦 Jeff Bezos — Amazon, Blue Origin</h3>
+        <div class="link-grid">
+          <a class="link-item" href="https://www.britannica.com/facts/Jeff-Bezos" target="_blank" rel="noopener"><span class="ico">📚</span> Britannica — Facts <span class="src">britannica.com</span></a>
+          <a class="link-item" href="https://en.wikipedia.org/wiki/Jeff_Bezos" target="_blank" rel="noopener"><span class="ico">🌐</span> Wikipedia <span class="src">wikipedia.org</span></a>
+          <a class="link-item" href="https://www.forbes.com/profile/jeff-bezos/" target="_blank" rel="noopener"><span class="ico">💼</span> Forbes Profile <span class="src">forbes.com</span></a>
+          <a class="link-item" href="https://www.entrepreneur.com/jeff-bezos" target="_blank" rel="noopener"><span class="ico">🚀</span> Entrepreneur — Story <span class="src">entrepreneur.com</span></a>
+        </div>
+      </div>
+      <div class="link-category">
+        <h3>💻 Bill Gates — Microsoft</h3>
+        <div class="link-grid">
+          <a class="link-item" href="https://www.gatesfoundation.org/about/leadership/bill-gates" target="_blank" rel="noopener"><span class="ico">🌐</span> Gates Foundation Bio <span class="src">gatesfoundation.org</span></a>
+          <a class="link-item" href="https://www.britannica.com/money/Bill-Gates" target="_blank" rel="noopener"><span class="ico">📚</span> Britannica — Bio <span class="src">britannica.com</span></a>
+          <a class="link-item" href="https://en.wikipedia.org/wiki/Bill_Gates" target="_blank" rel="noopener"><span class="ico">🌐</span> Wikipedia <span class="src">wikipedia.org</span></a>
+          <a class="link-item" href="https://www.gatesnotes.com/" target="_blank" rel="noopener"><span class="ico">✍️</span> Gates Notes Blog <span class="src">gatesnotes.com</span></a>
+        </div>
+      </div>
+      <div class="link-category">
+        <h3>🇨🇳 Jack Ma — Alibaba</h3>
+        <div class="link-grid">
+          <a class="link-item" href="https://www.britannica.com/money/Jack-Ma" target="_blank" rel="noopener"><span class="ico">📚</span> Britannica — Bio <span class="src">britannica.com</span></a>
+          <a class="link-item" href="https://en.wikipedia.org/wiki/Jack_Ma" target="_blank" rel="noopener"><span class="ico">🌐</span> Wikipedia <span class="src">wikipedia.org</span></a>
+          <a class="link-item" href="https://www.businessinsider.com/jack-ma-rags-to-riches-story" target="_blank" rel="noopener"><span class="ico">📰</span> Business Insider — Story <span class="src">businessinsider.com</span></a>
+          <a class="link-item" href="https://www.alibabagroup.com/" target="_blank" rel="noopener"><span class="ico">🏢</span> Alibaba Official <span class="src">alibabagroup.com</span></a>
+        </div>
+      </div>
+      <div class="link-category">
+        <h3>🇮🇳 Ratan Tata & Mukesh Ambani</h3>
+        <div class="link-grid">
+          <a class="link-item" href="https://www.tata.com/about-us/leadership" target="_blank" rel="noopener"><span class="ico">🏢</span> Tata Group Official <span class="src">tata.com</span></a>
+          <a class="link-item" href="https://en.wikipedia.org/wiki/Ratan_Tata" target="_blank" rel="noopener"><span class="ico">🌐</span> Ratan Tata — Wiki <span class="src">wikipedia.org</span></a>
+          <a class="link-item" href="https://www.britannica.com/money/Mukesh-Ambani" target="_blank" rel="noopener"><span class="ico">📚</span> Mukesh Ambani — Bio <span class="src">britannica.com</span></a>
+          <a class="link-item" href="https://www.ril.com/" target="_blank" rel="noopener"><span class="ico">🏢</span> Reliance Official <span class="src">ril.com</span></a>
+        </div>
+      </div>
+      <div class="link-category">
+        <h3>🌍 More Legends</h3>
+        <div class="link-grid">
+          <a class="link-item" href="https://group.softbank/en/about/executives/son" target="_blank" rel="noopener"><span class="ico">🇯🇵</span> Masayoshi Son — SoftBank <span class="src">group.softbank</span></a>
+          <a class="link-item" href="https://en.wikipedia.org/wiki/Larry_Page" target="_blank" rel="noopener"><span class="ico">🔍</span> Larry Page — Wiki <span class="src">wikipedia.org</span></a>
+          <a class="link-item" href="https://www.apple.com/leadership/tim-cook/" target="_blank" rel="noopener"><span class="ico">🍎</span> Tim Cook — Apple <span class="src">apple.com</span></a>
+          <a class="link-item" href="https://blog.samaltman.com/" target="_blank" rel="noopener"><span class="ico">🤖</span> Sam Altman's Blog <span class="src">blog.samaltman.com</span></a>
+          <a class="link-item" href="https://www.principles.com/" target="_blank" rel="noopener"><span class="ico">🌍</span> Ray Dalio — Principles <span class="src">principles.com</span></a>
+          <a class="link-item" href="https://www.forbes.com/billionaires/" target="_blank" rel="noopener"><span class="ico">💼</span> Forbes Billionaires List <span class="src">forbes.com</span></a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="tab-opportunities" class="panel">
+    <div class="card opp-hero">
+      <h2>💰 Sectors That Create Billionaires</h2>
+      <p>Which industries have produced the most billionaires? Where should you focus your energy if you want to build massive wealth? Here are <b>20 sectors</b> ranked by opportunity, capital needed, and time to billions.</p>
+      <p style="margin-top:10px"><b style="color:#34d399">Reality check:</b> No sector guarantees billions. But these sectors have the highest probability. Start small, learn fast, scale hard. 💪</p>
+    </div>
+
+    <div class="card">
+      <h2>📊 Quick Stats</h2>
+      <div class="opp-count-grid">
+        <div class="opp-count"><div class="num">2,700+</div><div class="lbl">Billionaires Worldwide</div><div class="sub">Forbes 2024 list</div></div>
+        <div class="opp-count"><div class="num">~35%</div><div class="lbl">From Tech</div><div class="sub">Software, AI, Internet</div></div>
+        <div class="opp-count"><div class="num">~20%</div><div class="lbl">From Finance</div><div class="sub">Investing, Banking, Crypto</div></div>
+        <div class="opp-count"><div class="num">~15%</div><div class="lbl">Real Estate</div><div class="sub">Property & Construction</div></div>
+        <div class="opp-count"><div class="num">10–20yrs</div><div class="lbl">Average Time</div><div class="sub">to reach $1B</div></div>
+        <div class="opp-count"><div class="num">$0</div><div class="lbl">Minimum Start</div><div class="sub">Many started with nothing</div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>🔥 Top 20 Sectors</h2>
+      <div class="filter-bar" id="sectorFilters">
+        <button class="filter-btn active" data-filter="all">All</button>
+        <button class="filter-btn" data-filter="hot">🔥 Hottest Now</button>
+        <button class="filter-btn" data-filter="low">💵 Low Investment</button>
+        <button class="filter-btn" data-filter="fast">⚡ Fast Growth</button>
+        <button class="filter-btn" data-filter="ind">🇮🇳 India Focus</button>
+      </div>
+      <div class="sector-grid" id="sectorList"></div>
+    </div>
+
+    <div class="card" style="background:linear-gradient(135deg,rgba(52,211,153,.1),rgba(34,211,238,.08));border-color:rgba(52,211,153,.4)">
+      <h2>🚀 The 5 Rules of Billionaire Building</h2>
+      <div class="note" style="font-size:13px;color:#c8d8e0;line-height:1.85">
+        <b style="color:#34d399">1. Solve a $1B problem.</b> Small problems = small money. Find something millions of people desperately need.<br><br>
+        <b style="color:#22d3ee">2. Scale infinitely.</b> Software, AI, digital products — these have near-zero marginal cost. One code = infinite users.<br><br>
+        <b style="color:#fbbf24">3. Own equity, not salary.</b> No one became a billionaire on salary. Start or join a startup with equity.<br><br>
+        <b style="color:#f472b6">4. Compound for 10+ years.</b> Every billionaire spent a decade+ obsessively focused. No shortcuts.<br><br>
+        <b style="color:#a78bfa">5. Reinvest everything.</b> Take profit, put it back in. Scale until the market caps out.
+      </div>
+    </div>
+  </section>
+
+  <section id="tab-settings" class="panel">
+    <div class="card">
+      <h2>⚙️ Settings</h2>
+      <form onsubmit="App.saveProfile(event)" class="form-grid">
+        <input id="sName" placeholder="Your name">
+        <input id="sBirth" type="date" required>
+        <input id="sYears" type="number" min="1" max="120" placeholder="Total life (years)">
+        <input id="sTarget" type="number" min="0" placeholder="Work target (hours)">
+        <button class="btn primary" type="submit">Save</button>
+      </form>
+      <div class="divider"></div>
+      <button class="btn bad" onclick="App.resetAll()">🗑️ Erase All Data</button>
+    </div>
+  </section>
+</main>
+
+<script>
+/* ========== AUDIO ========== */
+const Audio = (function(){
+  let ctx=null, masterGain=null, musicGain=null, tickGain=null;
+  let musicPlaying=false, tickPlaying=false, voices=[], volume=0.5;
+  function createContext(){
+    if(ctx) return ctx;
+    try{
+      const AC = window.AudioContext || window.webkitAudioContext;
+      ctx = new AC();
+      masterGain = ctx.createGain(); masterGain.gain.value=1; masterGain.connect(ctx.destination);
+      musicGain = ctx.createGain(); musicGain.gain.value=0; musicGain.connect(masterGain);
+      tickGain = ctx.createGain(); tickGain.gain.value=0; tickGain.connect(masterGain);
+    }catch(e){}
+    return ctx;
+  }
+  async function unlock(){
+    createContext();
+    if(!ctx) return false;
+    try{
+      if(ctx.state==='suspended') await ctx.resume();
+      const buf=ctx.createBuffer(1,1,22050);
+      const src=ctx.createBufferSource(); src.buffer=buf; src.connect(ctx.destination); src.start(0);
+      return ctx.state==='running';
+    }catch(e){ return false; }
+  }
+  function createPad(){
+    const freqs=[{f:55,t:'sine',g:0.22},{f:82.4,t:'sine',g:0.20},{f:110,t:'sine',g:0.20},{f:164.81,t:'triangle',g:0.16},{f:220,t:'sine',g:0.18},{f:329.63,t:'triangle',g:0.12},{f:440,t:'sine',g:0.09},{f:659.25,t:'sine',g:0.05}];
+    freqs.forEach(v=>{
+      const osc=ctx.createOscillator(); osc.type=v.t; osc.frequency.value=v.f;
+      osc.detune.value=(Math.random()-0.5)*10;
+      const g=ctx.createGain(); g.gain.value=v.g;
+      osc.connect(g); g.connect(musicGain);
+      const lfoG=ctx.createGain(); lfoG.gain.value=v.g*0.4;
+      const lfoOsc=ctx.createOscillator(); lfoOsc.frequency.value=0.04+Math.random()*0.10;
+      lfoOsc.connect(lfoG); lfoG.connect(g.gain); lfoOsc.start();
+      osc.start(); voices.push({osc,g,lfoOsc});
+    });
+    const filter=ctx.createBiquadFilter();
+    filter.type='lowpass'; filter.frequency.value=800; filter.Q.value=0.7;
+    musicGain.disconnect(); musicGain.connect(filter); filter.connect(masterGain);
+    const sweep=ctx.createOscillator(); sweep.frequency.value=0.03;
+    const sweepG=ctx.createGain(); sweepG.gain.value=350;
+    sweep.connect(sweepG); sweepG.connect(filter.frequency); sweep.start();
+    voices.push({osc:sweep});
+  }
+  async function startMusic(){
+    const ok=await unlock();
+    if(!ok) return false;
+    if(musicPlaying) return true;
+    if(voices.length===0) createPad();
+    const now=ctx.currentTime;
+    musicGain.gain.cancelScheduledValues(now);
+    musicGain.gain.setValueAtTime(musicGain.gain.value,now);
+    musicGain.gain.linearRampToValueAtTime(volume,now+0.8);
+    musicPlaying=true; updateMusicBtn(); updateAudioStatus();
+    return true;
+  }
+  function stopMusic(){
+    if(!ctx) return;
+    const now=ctx.currentTime;
+    musicGain.gain.cancelScheduledValues(now);
+    musicGain.gain.setValueAtTime(musicGain.gain.value,now);
+    musicGain.gain.linearRampToValueAtTime(0,now+0.6);
+    musicPlaying=false; updateMusicBtn(); updateAudioStatus();
+  }
+  function setVolume(v){
+    volume=Math.max(0,Math.min(1,v/100));
+    if(ctx && musicPlaying){
+      const now=ctx.currentTime;
+      musicGain.gain.cancelScheduledValues(now);
+      musicGain.gain.linearRampToValueAtTime(volume,now+0.15);
+    }
+    if(ctx) tickGain.gain.value=tickPlaying?volume*0.7:0;
+  }
+  function playTick(){
+    if(!ctx || ctx.state!=='running') return;
+    const t=ctx.currentTime;
+    [{f:1318.51,g:0.18,d:0.30},{f:1975.53,g:0.12,d:0.25},{f:2637,g:0.06,d:0.18}].forEach(n=>{
+      const osc=ctx.createOscillator(); osc.type='sine'; osc.frequency.value=n.f;
+      const g=ctx.createGain();
+      g.gain.setValueAtTime(0,t);
+      g.gain.linearRampToValueAtTime(n.g,t+0.004);
+      g.gain.exponentialRampToValueAtTime(0.0001,t+n.d);
+      osc.connect(g); g.connect(tickGain);
+      osc.start(t); osc.stop(t+n.d+0.05);
+    });
+  }
+  async function toggleMusic(){
+    await unlock();
+    if(musicPlaying){ stopMusic(); }
+    else{ const ok=await startMusic(); if(!ok) alert('⚠️ Click the page first, then try again.'); }
+  }
+  async function toggleTick(){
+    await unlock();
+    tickPlaying=!tickPlaying;
+    if(ctx) tickGain.gain.value=tickPlaying?volume*0.7:0;
+    updateTickBtn(); updateAudioStatus();
+  }
+  function updateMusicBtn(){const b=document.getElementById('musicBtn');if(!b)return;if(musicPlaying){b.classList.add('playing');b.textContent='⏸️';}else{b.classList.remove('playing');b.textContent='🎵';}}
+  function updateTickBtn(){const b=document.getElementById('tickBtn');if(!b)return;if(tickPlaying){b.classList.add('playing');b.textContent='🔕';}else{b.classList.remove('playing');b.textContent='🔔';}}
+  function updateAudioStatus(){const s=document.getElementById('audioStatus');if(!s)return;if(musicPlaying||tickPlaying){s.textContent='ON';s.classList.add('on');}else{s.textContent='OFF';s.classList.remove('on');}}
+  function isTickPlaying(){return tickPlaying;}
+  async function firstGestureStart(){
+    const ok=await unlock();
+    if(ok){
+      await startMusic();
+      if(!tickPlaying){tickPlaying=true;if(ctx)tickGain.gain.value=volume*0.7;updateTickBtn();updateAudioStatus();}
+    }
+    return ok;
+  }
+  return { toggleMusic, toggleTick, setVolume, playTick, isTickPlaying, firstGestureStart };
+})();
+
+/* ========== HELPERS ========== */
+function pad(n){return String(n).padStart(2,'0');}
+const DAYS=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+const MONTHS=['January','February','March','April','May','June','July','August','September','October','November','December'];
+function getWeekNumber(d){const date=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate()));const dayNum=date.getUTCDay()||7;date.setUTCDate(date.getUTCDate()+4-dayNum);const yearStart=new Date(Date.UTC(date.getUTCFullYear(),0,1));return Math.ceil((((date-yearStart)/86400000)+1)/7);}
+function breakdownDuration(seconds){
+  if(seconds<0) seconds=0;
+  const y=Math.floor(seconds/(365.25*24*3600));
+  let rem=seconds-y*365.25*24*3600;
+  const m=Math.floor(rem/(30.44*24*3600)); rem-=m*30.44*24*3600;
+  const d=Math.floor(rem/86400); rem-=d*86400;
+  const h=Math.floor(rem/3600); rem-=h*3600;
+  const mi=Math.floor(rem/60); const s=Math.floor(rem%60);
+  return {y,m,d,h,mi,s};
+}
+
+/* ========== LEGENDS DATA ========== */
+const LEGENDS = [
+  { name:'Elon Musk', role:'Tesla • SpaceX • xAI', initial:'E', badge:'🚀 LEGEND',
+    companies:'6+ companies', portfolio:'100+ startups', worth:'$250B+', ageStarted:'24',
+    quote:'"When something is important enough, you do it even if the odds are not in your favor."',
+    fact:'Slept on office floor, worked 100+ hrs/week for years.' },
+  { name:'Warren Buffett', role:'Berkshire Hathaway', initial:'W', badge:'💰 ORACLE',
+    companies:'Owns 60+', portfolio:'500+ companies', worth:'$130B+', ageStarted:'11',
+    quote:'"The best investment you can make is in yourself."',
+    fact:'Bought his first stock at age 11.' },
+  { name:'Masayoshi Son', role:'SoftBank Group', initial:'M', badge:'🇯🇵 VISIONARY',
+    companies:'Vision Fund $100B', portfolio:'1000+ companies', worth:'$30B+', ageStarted:'16',
+    quote:'"In 30 years, I will be the world\'s #1 entrepreneur."',
+    fact:'SoftBank Vision Fund invested in 1000+ companies.' },
+  { name:'Jeff Bezos', role:'Amazon • Blue Origin', initial:'J', badge:'📦 EMPIRE',
+    companies:'2 mega-companies', portfolio:'100+ startups', worth:'$200B+', ageStarted:'30',
+    quote:'"I knew the one thing I might regret is not ever having tried."',
+    fact:'Started Amazon in a garage. Left $300K/yr job.' },
+  { name:'Bill Gates', role:'Microsoft • Gates Foundation', initial:'B', badge:'💻 PIONEER',
+    companies:'Microsoft $3T', portfolio:'200+ companies', worth:'$130B+', ageStarted:'19',
+    quote:'"It\'s fine to celebrate success but heed the lessons of failure."',
+    fact:'Dropped out of Harvard at 19.' },
+  { name:'Jack Ma', role:'Alibaba • Ant Group', initial:'J', badge:'🇨🇳 TEACHER',
+    companies:'Alibaba $250B', portfolio:'500+ startups', worth:'$30B+', ageStarted:'35',
+    quote:'"Giving up is the greatest failure."',
+    fact:'Rejected from 30 jobs including KFC.' },
+  { name:'Ratan Tata', role:'Tata Group', initial:'R', badge:'🇮🇳 RESPECT',
+    companies:'Tata 100+', portfolio:'200+ startups', worth:'$1B+ personal', ageStarted:'30',
+    quote:'"I take decisions and then make them right."',
+    fact:'Built Tata into a global giant.' },
+  { name:'Mukesh Ambani', role:'Reliance Industries', initial:'M', badge:'🇮🇳 TITAN',
+    companies:'Reliance 30+', portfolio:'100+ startups', worth:'$95B+', ageStarted:'24',
+    quote:'"The biggest risk is not taking any risk."',
+    fact:'Built Jio into $100B+ telecom in 5 years.' },
+  { name:'Larry Page & Sergey Brin', role:'Google • Alphabet', initial:'G', badge:'🔍 SEARCH',
+    companies:'Alphabet 50+', portfolio:'1000+ companies', worth:'$200B+', ageStarted:'23',
+    quote:'"The best way to predict the future is to invent it."',
+    fact:'Started Google in a garage at 23.' },
+  { name:'Tim Cook', role:'Apple', initial:'T', badge:'🍎 SCALE',
+    companies:'Apple $3T', portfolio:'100+ companies', worth:'$2B+', ageStarted:'37',
+    quote:'"If you focus on making things great, you\'ll be rewarded."',
+    fact:'Scaled Apple to first $3T company ever.' },
+  { name:'Sam Altman', role:'OpenAI • Y Combinator', initial:'S', badge:'🤖 AI PIONEER',
+    companies:'OpenAI $150B', portfolio:'500+ companies', worth:'$2B+', ageStarted:'19',
+    quote:'"Work on something you are passionate about."',
+    fact:'Y Combinator funded 4000+ companies.' },
+  { name:'Ray Dalio', role:'Bridgewater Associates', initial:'R', badge:'🌍 INVESTOR',
+    companies:'Bridgewater $150B', portfolio:'100+ companies', worth:'$20B+', ageStarted:'26',
+    quote:'"Pain + Reflection = Progress."',
+    fact:'Built world\'s largest hedge fund from a 2-room apartment.' }
+];
+
+/* ========== SECTORS DATA ========== */
+const SECTORS = [
+  { name:'Artificial Intelligence & ML', icon:'🤖', rank:'#1 HOTTEST', tags:['hot','fast','low'],
+    why:'AI is the biggest wealth-creation event in history. OpenAI went from $0 to $150B in 6 years.',
+    time:'5-10 years to $1B', capital:'$10K - $10M', skills:'Python, ML, Math',
+    examples:'OpenAI, Anthropic, Scale AI, Hugging Face',
+    tip:'Learn AI now. Even non-coders can build AI SaaS tools with no-code platforms.' },
+  { name:'Software / SaaS', icon:'💻', rank:'#2', tags:['hot','low','ind'],
+    why:'Recurring revenue = compounding wealth. One code, infinite customers, 80%+ margins.',
+    time:'7-12 years to $1B', capital:'$0 - $100K', skills:'Coding, Product, Sales',
+    examples:'Salesforce, Zoom, Notion, Freshworks (India)',
+    tip:'Find a niche pain point. Build MVP in a weekend. Charge from day 1.' },
+  { name:'E-commerce & D2C Brands', icon:'🛒', rank:'#3', tags:['fast','ind','low'],
+    why:'Amazon, Flipkart, Shopify, Meesho — e-commerce created dozens of billionaires.',
+    time:'8-15 years', capital:'$5K - $500K', skills:'Marketing, Supply Chain, Ops',
+    examples:'Amazon, Shopify, Nykaa, boAt, Zerodha',
+    tip:'Pick a category you love. Use Instagram + WhatsApp. Build a brand, not a shop.' },
+  { name:'Fintech / Payments', icon:'💳', rank:'#4', tags:['hot','fast','ind'],
+    why:'Money is the biggest market. Stripe, PayPal, Razorpay, PhonePe are worth $100B+.',
+    time:'7-12 years', capital:'$100K - $10M (regulation)', skills:'Finance, Tech, Compliance',
+    examples:'Stripe, PayPal, Razorpay, PhonePe, Cred',
+    tip:'India has 1B+ unbanked opportunities. UPI is a goldmine.' },
+  { name:'Crypto / Web3 / Blockchain', icon:'₿', rank:'#5 VOLATILE', tags:['hot','fast','low'],
+    why:'Fastest wealth creation in history. But also fastest to lose. High risk, high reward.',
+    time:'2-7 years (or lose in 1)', capital:'$100 - $100K', skills:'Solidity, Trading, Security',
+    examples:'Coinbase, Binance, Ethereum, Solana',
+    tip:'Learn blockchain basics. Build real utility, not memecoins. DYOR.' },
+  { name:'Healthcare & Biotech', icon:'🧬', rank:'#6', tags:['hot','ind','fast'],
+    why:'Post-COVID, health is a $10T+ market. Longevity, diagnostics, AI-medicine are exploding.',
+    time:'10-20 years', capital:'$1M - $100M (R&D)', skills:'Biology, Chemistry, Business',
+    examples:'Moderna, BioNTech, Illumina, 23andMe',
+    tip:'Partner with scientists. Focus on preventive care & telemedicine (low capital).' },
+  { name:'Renewable Energy & EV', icon:'⚡', rank:'#7', tags:['hot','fast','ind'],
+    why:'Climate change = $10T+ opportunity. Tesla, BYD, Ola Electric are reshaping transport.',
+    time:'10-20 years', capital:'$1M - $1B', skills:'Engineering, Manufacturing',
+    examples:'Tesla, BYD, Ola Electric, Ather, ReNew Power',
+    tip:'Battery tech, solar, charging infra are hot. Policy support is massive.' },
+  { name:'Space & Satellite Tech', icon:'🚀', rank:'#8', tags:['hot','low'],
+    why:'SpaceX showed it\'s possible. Now private space is a $500B+ industry.',
+    time:'10-20 years', capital:'$10M - $1B', skills:'Aerospace, Physics, Coding',
+    examples:'SpaceX, Rocket Lab, Planet Labs, Skyroot (India)',
+    tip:'Satellite data, launch services, space tourism. Partner with ISRO.' },
+  { name:'Gaming & Esports', icon:'🎮', rank:'#9', tags:['fast','low'],
+    why:'$200B+ industry. Mobile gaming especially huge in India.',
+    time:'5-10 years', capital:'$10K - $1M', skills:'Game Dev, Design, Community',
+    examples:'Epic Games, Krafton, Dream11, MPL',
+    tip:'Start with mobile games. Indian gamers = 500M+. Tournament + creator economy.' },
+  { name:'EdTech & Upskilling', icon:'📚', rank:'#10', tags:['fast','ind','low'],
+    why:'$400B+ market. AI tutors + YouTube changed everything.',
+    time:'5-10 years', capital:'$0 - $100K', skills:'Teaching, Content, Tech',
+    examples:'Byju\'s, Unacademy, Coursera, PhysicsWallah',
+    tip:'YouTube course → paid community → SaaS. PhysicsWallah built $1B from a YouTube channel.' },
+  { name:'Logistics & Delivery', icon:'📦', rank:'#11', tags:['fast','ind','low'],
+    why:'Every e-commerce order needs delivery. $10T+ market.',
+    time:'8-15 years', capital:'$50K - $5M', skills:'Ops, Supply Chain, Tech',
+    examples:'FedEx, Zomato, Delhivery, Porter',
+    tip:'Hyperlocal delivery, cold chain, B2B logistics are underserved.' },
+  { name:'Content / Creator Economy', icon:'🎬', rank:'#12', tags:['low','fast','ind'],
+    why:'$500B+ industry. MrBeast, PewDiePie built empires from a webcam.',
+    time:'3-8 years', capital:'$0 - $10K', skills:'Storytelling, Editing, Consistency',
+    examples:'MrBeast, Logan Paul, CarryMinati, Tanmay Bhat',
+    tip:'Pick niche. Post daily. Monetize via ads + products + memberships. Zero cost start.' },
+  { name:'Real Estate & PropTech', icon:'🏢', rank:'#13', tags:['ind'],
+    why:'Traditional wealth builder. Now PropTech is digitizing $300T+ real estate market.',
+    time:'10-20 years', capital:'$100K - $10M', skills:'Finance, Sales, Tech',
+    examples:'Zillow, NoBroker, Housing.com, Lodha',
+    tip:'Start with REITs + tech platforms. Fractional ownership is new trend.' },
+  { name:'Cybersecurity', icon:'🔒', rank:'#14', tags:['hot','low'],
+    why:'Every company needs security. $250B+ market growing 15% yearly.',
+    time:'7-12 years', capital:'$10K - $1M', skills:'Networking, Coding, Security',
+    examples:'CrowdStrike, Palo Alto, Zscaler, Cloudflare',
+    tip:'Certify (CISSP). Build SaaS security tools for SMBs.' },
+  { name:'Cloud & DevOps', icon:'☁️', rank:'#15', tags:['hot','low'],
+    why:'AWS alone is a $100B+ business. Cloud infra is essential.',
+    time:'7-12 years', capital:'$0 - $500K', skills:'AWS, K8s, Coding',
+    examples:'AWS, DigitalOcean, Vercel, Netlify',
+    tip:'Build niche SaaS on top of cloud (monitoring, security, cost optimization).' },
+  { name:'AgriTech', icon:'🌾', rank:'#16', tags:['ind','fast'],
+    why:'India = 60% agriculture. $500B+ market. Zero innovation historically.',
+    time:'8-15 years', capital:'$50K - $5M', skills:'Agri, Tech, Supply Chain',
+    examples:'DeHaat, Ninjacart, AgroStar, Cropin',
+    tip:'Farmer-to-consumer, precision farming, agri-loans = huge India play.' },
+  { name:'Insurance Tech', icon:'🛡️', rank:'#17', tags:['hot','ind'],
+    why:'$7T global market, 3% digitized. Massive disruption opportunity.',
+    time:'7-12 years', capital:'$500K - $10M', skills:'Actuarial, Tech, Sales',
+    examples:'PolicyBazaar, Lemonade, Acko, Digit',
+    tip:'Embedded insurance + AI underwriting = new wave.' },
+  { name:'Robotics & Automation', icon:'🤖', rank:'#18', tags:['hot'],
+    why:'Factories, warehouses, homes — everything will be automated. $200B+ by 2030.',
+    time:'10-15 years', capital:'$500K - $20M', skills:'Mechatronics, AI, Hardware',
+    examples:'Boston Dynamics, ABB, GreyOrange (India)',
+    tip:'Warehouse robotics + agri-robots are hot in India.' },
+  { name:'Quantum Computing', icon:'⚛️', rank:'#19 FUTURE', tags:['hot'],
+    why:'Next $1T frontier. Breakthroughs will create new billionaires.',
+    time:'15-25 years', capital:'$10M+ (R&D)', skills:'Physics, Math, CS',
+    examples:'IBM, Google, IonQ, Rigetti',
+    tip:'Very early. Get PhD if serious. Join IBM/Google quantum teams.' },
+  { name:'Biomanufacturing & Synthetic Bio', icon:'🧪', rank:'#20 FUTURE', tags:['hot'],
+    why:'Lab-grown meat, bio-materials, engineered organisms = $4T by 2040.',
+    time:'10-20 years', capital:'$1M - $50M', skills:'Bio, Chem, Eng',
+    examples:'Ginkgo Bioworks, Perfect Day, Impossible Foods',
+    tip:'Plant-based + alternative proteins are easy entry points.' }
+];
+
+/* ========== ANALOG MARKERS ========== */
+function drawAnalogMarkers(){
+  const g=document.getElementById('analogMarkers');
+  if(!g || g.dataset.done) return;
+  const NS='http://www.w3.org/2000/svg';
+  for(let i=0;i<12;i++){
+    const angle=i*30; const isHour=i%3===0; const dist=42;
+    const rad=(angle-90)*Math.PI/180;
+    const cx=50+Math.cos(rad)*dist, cy=50+Math.sin(rad)*dist;
+    const c=document.createElementNS(NS,'circle');
+    c.setAttribute('cx',cx.toFixed(2)); c.setAttribute('cy',cy.toFixed(2));
+    c.setAttribute('r',isHour?'2.4':'1.2'); c.setAttribute('class','mk'+(isHour?' hr':''));
+    g.appendChild(c);
+  }
+  g.dataset.done='1';
+}
+const RING_CIRC=2*Math.PI*38;
+function setRingProgress(id, percent){
+  const el=document.getElementById(id);
+  if(!el) return;
+  el.style.strokeDasharray=RING_CIRC;
+  el.style.strokeDashoffset=RING_CIRC*(1-Math.max(0,Math.min(1,percent/100)));
+}
+
+/* ========== UPDATE CLOCKS ========== */
+function updateClocks(){
+  const now=new Date();
+  const s=now.getSeconds(), m=now.getMinutes(), h=now.getHours()%12;
+  const secDeg=s*6, minDeg=m*6+s*0.1, hourDeg=h*30+m*0.5;
+  const secHand=document.getElementById('secHand');
+  const minHand=document.getElementById('minHand');
+  const hourHand=document.getElementById('hourHand');
+  if(secHand) secHand.setAttribute('transform','rotate('+secDeg+' 50 50)');
+  if(minHand) minHand.setAttribute('transform','rotate('+minDeg+' 50 50)');
+  if(hourHand) hourHand.setAttribute('transform','rotate('+hourDeg+' 50 50)');
+  const h24=now.getHours(); const ampm=h24>=12?'PM':'AM';
+  let h12=h24%12; if(h12===0) h12=12;
+  const elDig=document.getElementById('analogDigital');
+  if(elDig) elDig.textContent=pad(h12)+':'+pad(m)+':'+pad(s);
+  const elAp=document.getElementById('analogAmpm');
+  if(elAp) elAp.textContent=ampm;
+  const dom=now.getDate();
+  const dim=new Date(now.getFullYear(), now.getMonth()+1, 0).getDate();
+  setRingProgress('monthRing', dom/dim*100);
+  const elMD=document.getElementById('monthDayNum'); if(elMD) elMD.textContent=dom;
+  const elMT=document.getElementById('monthDayTot'); if(elMT) elMT.textContent='/ '+dim;
+  const elMN=document.getElementById('monthName'); if(elMN) elMN.textContent=MONTHS[now.getMonth()]+' '+now.getFullYear();
+  const soy=new Date(now.getFullYear(),0,1), eoy=new Date(now.getFullYear()+1,0,1);
+  const doy=Math.floor((now-soy)/86400000)+1;
+  const diy=Math.round((eoy-soy)/86400000);
+  setRingProgress('yearRing', doy/diy*100);
+  const elYD=document.getElementById('yearDayNum'); if(elYD) elYD.textContent=doy;
+  const elYT=document.getElementById('yearDayTot'); if(elYT) elYT.textContent='/ '+diy;
+  const elYL=document.getElementById('yearLabel'); if(elYL) elYL.textContent=now.getFullYear();
+}
+
+/* ========== MINI CAL ========== */
+let lastCalKey='';
+function renderMiniCal(){
+  const now=new Date();
+  const y=now.getFullYear(), mo=now.getMonth();
+  const key=y+'-'+mo+'-'+now.getDate();
+  if(key===lastCalKey) return;
+  lastCalKey=key;
+  const hdr=document.getElementById('mcCalHeader'); if(hdr) hdr.textContent=MONTHS[mo]+' '+y;
+  const first=new Date(y,mo,1), dim=new Date(y,mo+1,0).getDate();
+  const startDow=first.getDay(), today=now.getDate();
+  let html='';
+  ['S','M','T','W','T','F','S'].forEach(d=>{html+='<div class="dow">'+d+'</div>';});
+  for(let i=0;i<startDow;i++) html+='<div class="day empty">.</div>';
+  for(let d=1;d<=dim;d++){const cls=(d===today)?'day today':'day';html+='<div class="'+cls+'">'+d+'</div>';}
+  const el=document.getElementById('miniCal'); if(el) el.innerHTML=html;
+}
+
+/* ========== MASTER TICK ========== */
+function tickMaster(){
+  const p=state.profile;
+  const birth=parseDate(p.birthDate);
+  const now=new Date();
+  updateClocks();
+  const totalSec=p.lifeYears*365.25*24*3600;
+  const livedSec=Math.max(0,Math.floor((now-birth)/1000));
+  const passed=breakdownDuration(livedSec);
+  const elP=document.getElementById('mcPassedBig');
+  if(elP) elP.textContent=passed.y+'y '+pad(passed.m)+'m '+pad(passed.d)+'d '+pad(passed.h)+':'+pad(passed.mi)+':'+pad(passed.s);
+  const elPS=document.getElementById('mcPassedSub');
+  if(elPS) elPS.textContent=Math.floor(livedSec/3600).toLocaleString('en-US')+' hrs • '+livedSec.toLocaleString('en-US')+' sec';
+  renderMiniCal();
+}
+
+/* ========== LIVE TICK ========== */
+function tickLiveClock(){
+  const p=state.profile;
+  const birth=parseDate(p.birthDate);
+  const now=new Date();
+  const totalSec=p.lifeYears*365.25*24*3600;
+  const livedSec=Math.max(0,Math.min(totalSec,Math.floor((now-birth)/1000)));
+  const remainSec=Math.max(0,Math.floor(totalSec-livedSec));
+  const elL=document.getElementById('liveLivedSec');
+  if(elL){
+    elL.textContent=livedSec.toLocaleString('en-US');
+    const s=document.getElementById('liveLivedSub');
+    if(s) s.textContent='≈ '+Math.floor(livedSec/86400).toLocaleString('en-US')+' days';
+  }
+  const elR=document.getElementById('liveRemainSec');
+  if(elR){
+    elR.textContent=remainSec.toLocaleString('en-US');
+    const s=document.getElementById('liveRemainSub');
+    if(s) s.textContent='≈ '+(remainSec/86400/365.25).toFixed(2)+' years left';
+  }
+  const elY=document.getElementById('liveYearsLeft');
+  if(elY) elY.textContent=(remainSec/86400/365.25).toFixed(2);
+  const midnight=new Date(now.getFullYear(),now.getMonth(),now.getDate());
+  const sm=Math.floor((now-midnight)/1000);
+  const h=Math.floor(sm/3600), m=Math.floor((sm%3600)/60), s=sm%60;
+  const elT=document.getElementById('liveToday');
+  if(elT) elT.textContent=h+'h '+pad(m)+'m '+pad(s)+'s';
+  const tyb=new Date(now.getFullYear(),birth.getMonth(),birth.getDate());
+  let lb=tyb;
+  if(now<tyb) lb=new Date(now.getFullYear()-1,birth.getMonth(),birth.getDate());
+  const sbs=Math.floor((now-lb)/1000);
+  const bd=Math.floor(sbs/86400), bh=Math.floor((sbs%86400)/3600), bm=Math.floor((sbs%3600)/60), bs=sbs%60;
+  const elB=document.getElementById('liveBirthday');
+  if(elB) elB.textContent=bd+'d '+bh+'h '+pad(bm)+'m '+pad(bs)+'s';
+  if(Audio.isTickPlaying()) Audio.playTick();
+}
+
+/* ========== STATE ========== */
+const LS='lifeTracker_en_v9';
+const DEF={profile:{name:'',birthDate:'2009-03-11',lifeYears:60,workTargetHours:100000},phases:[{id:'p1',name:'Childhood',start:0,end:12,color:'#38bdf8',goal:'Learning, play, values'},{id:'p2',name:'Adolescence',start:12,end:20,color:'#22d3ee',goal:'Education & skills'},{id:'p3',name:'Young Adult',start:20,end:30,color:'#34d399',goal:'Career & savings'},{id:'p4',name:'Adulthood',start:30,end:45,color:'#fbbf24',goal:'Building & family'},{id:'p5',name:'Maturity',start:45,end:55,color:'#fb923c',goal:'Leadership & contribution'},{id:'p6',name:'Legacy',start:55,end:60,color:'#f472b6',goal:'Passing on knowledge'}],habits:[],logs:[]};
+let state;
+try{state=JSON.parse(localStorage.getItem(LS))||JSON.parse(JSON.stringify(DEF));}catch(e){state=JSON.parse(JSON.stringify(DEF));}
+state.profile=Object.assign({},DEF.profile,state.profile||{});
+state.phases=state.phases||JSON.parse(JSON.stringify(DEF.phases));
+state.habits=state.habits||[];state.logs=state.logs||[];
+function save(){localStorage.setItem(LS,JSON.stringify(state));}
+const uid=()=>Math.random().toString(36).slice(2,9);
+const nf=n=>Math.round(n).toLocaleString('en-US');
+const nf1=n=>Number(n).toLocaleString('en-US',{maximumFractionDigits:1});
+function toISO(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function todayStr(){return toISO(new Date());}
+function parseDate(s){const a=String(s).split('-').map(Number);return new Date(a[0],(a[1]||1)-1,a[2]||1);}
+function fmtDate(s){const d=parseDate(s);return d.toLocaleDateString('en-US',{day:'numeric',month:'short',year:'numeric'});}
+function daysBetween(a,b){return Math.round((b-a)/86400000);}
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function hrsLabel(h){if(h>=24*365)return nf1(h/(24*365.25))+' years';if(h>=24*30)return nf1(h/(24*30.44))+' months';if(h>=24)return nf1(h/24)+' days';return nf1(h)+' hours';}
+function ageParts(birth,now){let y=now.getFullYear()-birth.getFullYear();let m=now.getMonth()-birth.getMonth();let d=now.getDate()-birth.getDate();if(d<0){m--;d+=new Date(now.getFullYear(),now.getMonth(),0).getDate();}if(m<0){y--;m+=12;}return{y:Math.max(0,y),m:Math.max(0,m),d:Math.max(0,d)};}
+function lifeStats(){const p=state.profile;const birth=parseDate(p.birthDate);const now=new Date();const totalH=p.lifeYears*365.25*24;let livedH=(now-birth)/36e5;livedH=Math.max(0,Math.min(livedH,totalH));return{birth,now,totalH,livedH,remainH:Math.max(0,totalH-livedH)};}
+function habitLock(h){const start=parseDate(h.startDate||todayStr());const d0=start.getDate();const end=new Date(start.getTime());end.setDate(1);end.setMonth(end.getMonth()+(+h.lockMonths||1));const lastDay=new Date(end.getFullYear(),end.getMonth()+1,0).getDate();end.setDate(Math.min(d0,lastDay));const now=new Date();const totalDays=Math.max(1,daysBetween(start,end));const doneDays=Math.max(0,Math.min(totalDays,daysBetween(start,now)));const daysLeft=Math.max(0,Math.ceil((end-now)/864e5));return{start,end,totalDays,doneDays,daysLeft,unlocked:now>=end};}
+function streakOf(checkins){const set=new Set(checkins||[]);let d=new Date();if(!set.has(toISO(d)))d.setDate(d.getDate()-1);let s=0;while(set.has(toISO(d))){s++;d.setDate(d.getDate()-1);}return s;}
+
+/* ========== APP ========== */
+const App={
+  init(){
+    document.querySelectorAll('.tab-btn').forEach(b=>{
+      b.addEventListener('click',()=>{
+        document.querySelectorAll('.tab-btn').forEach(x=>x.classList.remove('active'));
+        document.querySelectorAll('.panel').forEach(x=>x.classList.remove('active'));
+        b.classList.add('active');
+        document.getElementById('tab-'+b.dataset.tab).classList.add('active');
+      });
+    });
+    document.getElementById('hStart').value=todayStr();
+    document.getElementById('lDate').value=todayStr();
+    const overlay=document.getElementById('unlockOverlay');
+    const unlockBtn=document.getElementById('unlockBtn');
+    const doUnlock=async(e)=>{
+      if(e) e.stopPropagation();
+      const ok=await Audio.firstGestureStart();
+      if(ok){overlay.classList.add('hide');setTimeout(()=>overlay.style.display='none',500);}
+    };
+    overlay.addEventListener('click',doUnlock);
+    unlockBtn.addEventListener('click',doUnlock);
+    drawAnalogMarkers();
+    // Sector filter
+    document.querySelectorAll('#sectorFilters .filter-btn').forEach(b=>{
+      b.addEventListener('click',()=>{
+        document.querySelectorAll('#sectorFilters .filter-btn').forEach(x=>x.classList.remove('active'));
+        b.classList.add('active');
+        this.renderSectors(b.dataset.filter);
+      });
+    });
+    tickMaster();
+    tickLiveClock();
+    setInterval(()=>{ tickMaster(); tickLiveClock(); },1000);
+    this.render();
+  },
+  render(){this.renderDashboard();this.renderHabits();this.renderTime();this.renderPhases();this.renderLegends();this.renderSectors('all');this.renderSettings();},
+  renderSectors(filter){
+    const list = filter==='all' ? SECTORS : SECTORS.filter(s=>s.tags.includes(filter));
+    document.getElementById('sectorList').innerHTML = list.map(s=>`
+      <div class="sector">
+        <div class="sector-rank">${esc(s.rank)}</div>
+        <div class="sector-head">
+          <div class="sector-avatar">${s.icon}</div>
+          <div>
+            <div class="sector-name">${esc(s.name)}</div>
+            <div class="sector-tag">${s.tags.map(t=>({hot:'🔥 Hottest',low:'💵 Low Capital',fast:'⚡ Fast Growth',ind:'🇮🇳 India Focus'}[t])).join(' • ')}</div>
+          </div>
+        </div>
+        <div class="sector-body"><b>Why:</b> ${esc(s.why)}</div>
+        <div class="sector-stats">
+          <div><div class="k">⏱️ Time to $1B</div><div class="v">${esc(s.time)}</div></div>
+          <div><div class="k">💰 Capital Needed</div><div class="v">${esc(s.capital)}</div></div>
+          <div><div class="k">🎓 Skills</div><div class="v">${esc(s.skills)}</div></div>
+          <div><div class="k">🏆 Examples</div><div class="v" style="font-size:11.5px">${esc(s.examples)}</div></div>
+        </div>
+        <div class="sector-tip">💡 <b>How to start:</b> ${esc(s.tip)}</div>
+      </div>`).join('');
+  },
+  renderLegends(){
+    const birth=parseDate(state.profile.birthDate);const now=new Date();const age=ageParts(birth,now);
+    const elAge=document.getElementById('yourAgeInLegend');
+    if(elAge) elAge.textContent=age.y;
+    document.getElementById('legendCounters').innerHTML=`
+      <div class="count-stat"><div class="num">1000+</div><div class="lbl">Companies Invested</div><div class="sub">SoftBank Vision Fund</div></div>
+      <div class="count-stat"><div class="num">4000+</div><div class="lbl">Startups Funded</div><div class="sub">Y Combinator</div></div>
+      <div class="count-stat"><div class="num">500+</div><div class="lbl">Companies Owned</div><div class="sub">Berkshire Hathaway</div></div>
+      <div class="count-stat"><div class="num">$4T+</div><div class="lbl">Combined Worth</div><div class="sub">of legends here</div></div>`;
+    document.getElementById('legendList').innerHTML=LEGENDS.map(L=>`
+      <div class="legend-card">
+        <div class="legend-badge">${L.badge}</div>
+        <div class="legend-head"><div class="legend-avatar">${L.initial}</div><div><div class="legend-name">${esc(L.name)}</div><div class="legend-role">${esc(L.role)}</div></div></div>
+        <div class="legend-stat">
+          <div><div class="k">Companies</div><div class="v">${esc(L.companies)}</div></div>
+          <div><div class="k">Portfolio</div><div class="v">${esc(L.portfolio)}</div></div>
+          <div><div class="k">Net Worth</div><div class="v">${esc(L.worth)}</div></div>
+          <div><div class="k">Age Started</div><div class="v">${esc(L.ageStarted)}</div></div>
+        </div>
+        <div class="legend-quote">${L.quote}</div>
+        <div class="legend-fact">💡 <b>Key fact:</b> ${esc(L.fact)}</div>
+      </div>`).join('');
+  },
+  renderDashboard(){
+    const{birth,now,totalH,livedH,remainH}=lifeStats();const p=state.profile;const pct=totalH?livedH/totalH*100:0;const age=ageParts(birth,now);const nameTxt=p.name?esc(p.name)+', ':'';
+    const workMin=state.logs.filter(l=>l.type==='work').reduce((a,l)=>a+(+l.minutes||0),0);
+    const wasteMin=state.logs.filter(l=>l.type==='waste').reduce((a,l)=>a+(+l.minutes||0),0);
+    const pracMin=state.habits.reduce((a,h)=>a+(h.checkins||[]).length*(+h.dailyMinutes||0),0);
+    const workH=workMin/60,wasteH=wasteMin/60,pracH=pracMin/60;
+    const alivePct=(livedH/totalH*100);const wastePct=wasteH/totalH*100;
+    document.getElementById('dashTop').innerHTML=`
+      <div class="card hero" style="grid-column:1/-1">
+        <div class="hero-top"><div><div class="label">Life Progress</div><div class="big">${nameTxt}${age.y} years ${age.m} months ${age.d} days</div></div><div class="pct">${pct.toFixed(2)}%</div></div>
+        <div class="bar"><div class="fill" style="width:${pct}%"></div></div>
+        <div class="hero-sub"><span>Born: <b>${fmtDate(p.birthDate)}</b></span><span>Total: <b>${p.lifeYears} years</b></span><span>Elapsed: <b>${nf(livedH)} hrs</b></span><span>Remaining: <b>${nf(remainH)} hrs</b></span></div>
+      </div>
+      <div class="grid g4" style="grid-column:1/-1">
+        <div class="stat"><div class="k">Total Life Hours</div><div class="v blue">${nf(totalH)}</div></div>
+        <div class="stat"><div class="k">Hours Elapsed</div><div class="v cyan">${nf(livedH)}</div><div class="s">${alivePct.toFixed(1)}%</div></div>
+        <div class="stat"><div class="k">Hours Remaining</div><div class="v green">${nf(remainH)}</div><div class="s">${hrsLabel(remainH)}</div></div>
+        <div class="stat"><div class="k">Hours Wasted</div><div class="v red">${nf1(wasteH)}</div><div class="s">${wastePct.toFixed(3)}%</div></div>
+        <div class="stat"><div class="k">Practice Hours</div><div class="v purple">${nf1(pracH)}</div><div class="s">${nf(pracMin)} min</div></div>
+        <div class="stat"><div class="k">Work Hours</div><div class="v amber">${nf1(workH)}</div><div class="s">${nf(workMin)} min</div></div>
+        <div class="stat"><div class="k">Habits</div><div class="v">${state.habits.length}</div><div class="s">${state.habits.filter(h=>h.fixed).length} done</div></div>
+        <div class="stat"><div class="k">Daily Wasted Avg</div><div class="v ${wasteH>0?'red':'green'}">${nf1(wasteH/Math.max(1,this.activeDays()))} min</div></div>
+      </div>`;
+    const target=+p.workTargetHours||0;const remainWork=Math.max(0,target-workH);const remainDays=remainH/24;const perDay=remainDays>0?(remainWork/remainDays):0;const workPct=target?Math.min(100,workH/target*100):0;
+    document.getElementById('goalBox').innerHTML=target?`
+      <div class="bline"><span>Completed: <b style="color:#e8ecf7">${nf1(workH)} hrs</b></span><span>Target: <b>${nf(target)} hrs</b></span></div>
+      <div class="bar"><div class="fill ${workPct>=70?'ok':workPct>=35?'':'warn'}" style="width:${workPct}%"></div></div>
+      <div class="hero-sub"><span>Progress: <b>${workPct.toFixed(2)}%</b></span><span>Left: <b>${nf(remainWork)} hrs</b></span><span>Daily: <b style="color:${perDay>8?'#f87171':'#34d399'}">${nf1(perDay)} hrs</b></span></div>`:'<div class="empty">Fill "Work target" in Settings.</div>';
+    const ph=state.phases.slice().sort((a,b)=>a.start-b.start);
+    document.getElementById('dashPhases').innerHTML=ph.map(x=>{
+      const s=new Date(birth.getTime());s.setFullYear(birth.getFullYear()+(+x.start||0));
+      const e=new Date(birth.getTime());e.setFullYear(birth.getFullYear()+(+x.end||0));
+      const tot=Math.max(1,(e-s)/36e5);const done=Math.max(0,Math.min(tot,(now-s)/36e5));const pc=tot?done/tot*100:0;
+      return `<div style="margin-bottom:14px"><div class="bline"><span><span class="pdot" style="background:${x.color};display:inline-block;margin-right:7px"></span><b>${esc(x.name)}</b></span><span>${pc.toFixed(1)}%</span></div><div class="bar"><div class="fill" style="width:${pc}%;background:${x.color}"></div></div></div>`;
+    }).join('');
+    document.getElementById('dashHabits').innerHTML=state.habits.length?state.habits.map(h=>{
+      const L=habitLock(h);const cnt=(h.checkins||[]).length;const pr=L.totalDays?Math.min(100,cnt/L.totalDays*100):0;
+      return `<div style="margin-bottom:15px"><div class="bline"><span><b>${esc(h.title)}</b></span><span>${cnt}d</span></div><div class="bar"><div class="fill ${h.fixed?'ok':''}" style="width:${pr}%"></div></div></div>`;
+    }).join(''):'<div class="empty">No habits.</div>';
+  },
+  activeDays(){const days=new Set(state.logs.map(l=>l.date));state.habits.forEach(h=>(h.checkins||[]).forEach(d=>days.add(d)));return days.size;},
+  addHabit(e){e.preventDefault();const t=document.getElementById('hTitle').value.trim();if(!t)return;state.habits.unshift({id:uid(),title:t,mistake:document.getElementById('hMistake').value.trim(),fix:document.getElementById('hFix').value.trim(),category:document.getElementById('hCat').value,dailyMinutes:Math.max(1,+document.getElementById('hMin').value||10),lockMonths:Math.max(1,+document.getElementById('hLock').value||3),startDate:document.getElementById('hStart').value||todayStr(),checkins:[],fixed:false,fixedOn:null});save();e.target.reset();document.getElementById('hStart').value=todayStr();document.getElementById('hMin').value=10;document.getElementById('hLock').value=3;this.render();},
+  toggleCheckin(id){const h=state.habits.find(x=>x.id===id);if(!h)return;const t=todayStr();h.checkins=h.checkins||[];const i=h.checkins.indexOf(t);if(i>=0)h.checkins.splice(i,1);else h.checkins.push(t);save();this.render();},
+  markFixed(id){const h=state.habits.find(x=>x.id===id);if(!h)return;const L=habitLock(h);if(!L.unlocked){alert('🔒 Lock not open. '+L.daysLeft+' days left.');return;}if(h.fixed){h.fixed=false;h.fixedOn=null;}else{if(!confirm('Mark as Complete?'))return;h.fixed=true;h.fixedOn=todayStr();}save();this.render();},
+  delHabit(id){if(!confirm('Delete?'))return;state.habits=state.habits.filter(h=>h.id!==id);save();this.render();},
+  renderHabits(){
+    const box=document.getElementById('habitList');
+    if(!state.habits.length){box.innerHTML='<div class="card"><div class="empty">No habits yet 🎯</div></div>';return;}
+    box.innerHTML=state.habits.map(h=>{
+      const L=habitLock(h);const cnt=(h.checkins||[]).length;
+      const lockPct=L.totalDays?L.doneDays/L.totalDays*100:0;
+      const pracPct=L.totalDays?Math.min(100,cnt/L.totalDays*100):0;
+      const st=streakOf(h.checkins);const totalMin=cnt*(+h.dailyMinutes||0);
+      const doneToday=(h.checkins||[]).includes(todayStr());
+      return `<div class="habit ${h.fixed?'fixed':''}">
+        <div class="h-head"><div><div class="h-title">${esc(h.title)}</div>
+        <div style="margin-top:7px;display:flex;gap:6px;flex-wrap:wrap">
+          <span class="chip">${esc(h.category||'Other')}</span>
+          <span class="chip">${h.dailyMinutes} min/day</span>
+          <span class="chip">${h.lockMonths}m lock</span>
+          ${h.fixed?'<span class="chip ok">✅ Complete</span>':L.unlocked?'<span class="chip ok">🔓 Unlocked</span>':'<span class="chip warn">🔒 '+L.daysLeft+'d left</span>'}
+        </div></div></div>
+        ${h.mistake?`<div class="h-row">❌ <b>Mistake:</b> ${esc(h.mistake)}</div>`:''}
+        ${h.fix?`<div class="h-row">✅ <b>Practice:</b> ${esc(h.fix)}</div>`:''}
+        <div class="h-bars">
+          <div><div class="bline"><span>🔒 Lock</span><span>${L.doneDays}/${L.totalDays}d</span></div><div class="bar"><div class="fill ${L.unlocked?'ok':''}" style="width:${lockPct}%"></div></div></div>
+          <div><div class="bline"><span>🎯 Practice</span><span>${cnt}/${L.totalDays}d</span></div><div class="bar"><div class="fill ${h.fixed?'ok':''}" style="width:${pracPct}%"></div></div></div>
+        </div>
+        <div class="h-stats"><span>Days<br><b>${cnt}</b></span><span>Streak<br><b>${st} 🔥</b></span><span>Time<br><b>${nf(totalMin)}m</b></span></div>
+        <div class="h-actions">
+          <button class="btn ${doneToday?'ok':'primary'} sm" onclick="App.toggleCheckin('${h.id}')">${doneToday?'✅ Done':'+ Practice'}</button>
+          <button class="btn ${h.fixed?'':'ok'} sm" ${(!L.unlocked&&!h.fixed)?'disabled':''} onclick="App.markFixed('${h.id}')">${h.fixed?'↩ Reactivate':'🏁 Complete'}</button>
+          <button class="btn bad sm" onclick="App.delHabit('${h.id}')">🗑️</button>
+        </div>
+      </div>`;
+    }).join('');
+  },
+  addLog(e){e.preventDefault();const m=+document.getElementById('lMin').value;if(!m||m<1)return;state.logs.unshift({id:uid(),type:document.getElementById('lType').value,minutes:m,note:document.getElementById('lNote').value.trim(),date:document.getElementById('lDate').value||todayStr()});save();e.target.reset();document.getElementById('lDate').value=todayStr();document.getElementById('lMin').value=15;this.render();},
+  delLog(id){state.logs=state.logs.filter(l=>l.id!==id);save();this.render();},
+  renderTime(){
+    const now=new Date();const t=todayStr();
+    const wkStart=new Date(now);wkStart.setDate(now.getDate()-6);
+    const wkWaste=state.logs.filter(l=>l.type==='waste'&&parseDate(l.date)>=new Date(toISO(wkStart))).reduce((a,l)=>a+ +l.minutes,0);
+    const totalWaste=state.logs.filter(l=>l.type==='waste').reduce((a,l)=>a+ +l.minutes,0);
+    const totalWork=state.logs.filter(l=>l.type==='work').reduce((a,l)=>a+ +l.minutes,0);
+    const{totalH}=lifeStats();
+    document.getElementById('timeStats').innerHTML=`
+      <div class="stat"><div class="k">Today Wasted</div><div class="v red">${nf(state.logs.filter(l=>l.type==='waste'&&l.date===t).reduce((a,l)=>a+ +l.minutes,0))} min</div></div>
+      <div class="stat"><div class="k">7-day Wasted</div><div class="v amber">${nf(wkWaste)} min</div></div>
+      <div class="stat"><div class="k">Total Wasted</div><div class="v red">${nf1(totalWaste/60)} hrs</div><div class="s">${(totalWaste/60/totalH*100).toFixed(3)}%</div></div>
+      <div class="stat"><div class="k">Total Work</div><div class="v green">${nf1(totalWork/60)} hrs</div></div>`;
+    const waste=state.logs.filter(l=>l.type==='waste').slice(0,60);
+    document.getElementById('wasteList').innerHTML=waste.length?waste.map(l=>`<div class="logrow"><div class="l"><div class="ltag waste">❌</div><div><div class="lmain">${esc(l.note)||'—'}</div><div class="lsub">${fmtDate(l.date)}</div></div></div><div style="display:flex;align-items:center;gap:10px"><span class="lmin" style="color:#f87171">${l.minutes}m</span><button class="btn bad sm" onclick="App.delLog('${l.id}')">✕</button></div></div>`).join(''):'<div class="empty">No waste 🎉</div>';
+    const work=state.logs.filter(l=>l.type==='work').slice(0,60);
+    document.getElementById('workList').innerHTML=work.length?work.map(l=>`<div class="logrow"><div class="l"><div class="ltag work">✅</div><div><div class="lmain">${esc(l.note)||'Work'}</div><div class="lsub">${fmtDate(l.date)}</div></div></div><div style="display:flex;align-items:center;gap:10px"><span class="lmin" style="color:#34d399">${l.minutes}m</span><button class="btn bad sm" onclick="App.delLog('${l.id}')">✕</button></div></div>`).join(''):'<div class="empty">No work yet</div>';
+  },
+  addPhase(){state.phases.push({id:uid(),name:'New Phase',start:0,end:5,color:'#6c8cff',goal:''});save();this.render();},
+  updPhase(id,field,val){const p=state.phases.find(x=>x.id===id);if(!p)return;p[field]=(field==='start'||field==='end')?(+val||0):val;save();if(field!=='name'&&field!=='goal')this.renderPhases();this.renderDashboard();},
+  delPhase(id){if(!confirm('Delete?'))return;state.phases=state.phases.filter(p=>p.id!==id);save();this.render();},
+  renderPhases(){
+    const{birth,now}=lifeStats();
+    const list=state.phases.slice().sort((a,b)=>a.start-b.start);
+    document.getElementById('phaseList').innerHTML=list.length?list.map(x=>{
+      const s=new Date(birth.getTime());s.setFullYear(birth.getFullYear()+(+x.start||0));
+      const e=new Date(birth.getTime());e.setFullYear(birth.getFullYear()+(+x.end||0));
+      const tot=Math.max(1,(e-s)/36e5);const done=Math.max(0,Math.min(tot,(now-s)/36e5));const pc=tot?done/tot*100:0;
+      const status=now<s?'Upcoming':now>e?'Completed':'In progress';
+      return `<div class="phase">
+        <div class="phase-top"><div class="phase-name"><span class="pdot" style="background:${x.color}"></span><input value="${esc(x.name)}" onchange="App.updPhase('${x.id}','name',this.value)" style="background:transparent;border:none;padding:0;font-size:14.5px;font-weight:700;color:#e8ecf7;width:auto;min-width:130px"></div>
+        <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap"><span class="pill">${x.start}–${x.end}</span><span class="pill">${status}</span><button class="btn bad sm" onclick="App.delPhase('${x.id}')">✕</button></div></div>
+        <div class="phase-inputs">
+          <input value="${esc(x.goal||'')}" placeholder="Goal" onchange="App.updPhase('${x.id}','goal',this.value)">
+          <input type="number" value="${x.start}" onchange="App.updPhase('${x.id}','start',this.value)">
+          <input type="number" value="${x.end}" onchange="App.updPhase('${x.id}','end',this.value)">
+          <input type="color" value="${x.color}" onchange="App.updPhase('${x.id}','color',this.value)" style="padding:4px;height:42px"><span></span>
+        </div>
+        <div style="margin-top:12px"><div class="bar"><div class="fill" style="width:${pc}%;background:${x.color}"></div></div></div>
+      </div>`;
+    }).join(''):'<div class="empty">No phases</div>';
+  },
+  renderSettings(){const p=state.profile;document.getElementById('sName').value=p.name||'';document.getElementById('sBirth').value=p.birthDate;document.getElementById('sYears').value=p.lifeYears;document.getElementById('sTarget').value=p.workTargetHours;document.getElementById('brandSub').textContent=(p.name?p.name+' • ':'')+p.lifeYears+' years • Every second counted';},
+  saveProfile(e){e.preventDefault();state.profile.name=document.getElementById('sName').value.trim();state.profile.birthDate=document.getElementById('sBirth').value||'2009-03-11';state.profile.lifeYears=Math.max(1,+document.getElementById('sYears').value||60);state.profile.workTargetHours=Math.max(0,+document.getElementById('sTarget').value||0);save();this.render();alert('✅ Saved');},
+  resetAll(){if(!confirm('Erase all data?'))return;localStorage.removeItem(LS);state=JSON.parse(JSON.stringify(DEF));save();this.render();}
+};
+App.init();
+</script>
+</body>
+</html>

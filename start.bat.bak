@@ -1,0 +1,42 @@
+@echo off
+setlocal
+cd /d "%~dp0"
+title Control Room LMS
+
+:: Disable Python bytecode generation (stops Google Drive from syncing __pycache__)
+set PYTHONDONTWRITEBYTECODE=1
+
+echo ============================================
+echo  Control Room + LMS (Fast Boot)
+echo ============================================
+
+where python >nul 2>&1
+if errorlevel 1 (
+    echo [ERROR] Python not found. Install Python 3.11+ from https://python.org
+    pause & exit /b 1
+)
+
+if not exist ".venv" (
+    echo [First Time Setup] Creating virtual environment...
+    python -m venv .venv
+    call .venv\Scripts\activate.bat
+    echo Installing dependencies (Only happens once)...
+    pip install -q -r requirements.txt
+) else (
+    call .venv\Scripts\activate.bat
+)
+
+echo Starting server...
+:: Start server in a separate window so this window can wait
+start "Control Room Server" /min cmd /c "python app.py"
+
+:: Wait 3 seconds for server to boot
+timeout /t 3 /nobreak >nul
+
+echo Opening browser...
+start "" http://127.0.0.1:5000
+
+echo Server is running in the background (Minimized window).
+echo To stop the server, close the "Control Room Server" window or press Ctrl+C in it.
+timeout /t 3 >nul
+exit

@@ -1,0 +1,96 @@
+2026-10-18 18:59:47,399 | INFO | scan complete: 1931 files, 1438 folders, 0 errors
+2026-10-18 20:02:03,280 [INFO] Scan 1792333923 started at G:\My Drive
+2026-10-18 20:02:03,312 [ERROR] Scan 1792333923 crashed: tuple indices must be integers or slices, not str
+Traceback (most recent call last):
+  File "C:\Users\lieod\Downloads\00_CONTROL_ROOM\control_room\app.py", line 375, in run_scan
+    classify_and_upsert(conn, Path(entry.path), None, 0, scan_id, {"under_course_root": False})
+  File "C:\Users\lieod\Downloads\00_CONTROL_ROOM\control_room\app.py", line 278, in classify_and_upsert
+    item_id = row["id"]
+              ~~~^^^^^^
+TypeError: tuple indices must be integers or slices, not str
+2026-10-18 20:02:04,062 [INFO] Scan 1792333924 started at G:\My Drive
+2026-10-18 20:02:04,070 [ERROR] Scan 1792333924 crashed: tuple indices must be integers or slices, not str
+Traceback (most recent call last):
+  File "C:\Users\lieod\Downloads\00_CONTROL_ROOM\control_room\app.py", line 375, in run_scan
+    classify_and_upsert(conn, Path(entry.path), None, 0, scan_id, {"under_course_root": False})
+  File "C:\Users\lieod\Downloads\00_CONTROL_ROOM\control_room\app.py", line 278, in classify_and_upsert
+    item_id = row["id"]
+              ~~~^^^^^^
+TypeError: tuple indices must be integers or slices, not str
+2026-10-18 20:36:22,244 | ERROR | scan failed: database disk image is malformed
+Traceback (most recent call last):
+  File "G:\My Drive\00_CONTROL_ROOM\app.py", line 201, in scan_worker
+    c.execute("""UPDATE items SET parent_id=?, name=?, abs_path=?, item_type=?,
+sqlite3.DatabaseError: database disk image is malformed
+2026-10-18 20:50:20,734 | ERROR | scan failed: database disk image is malformed
+Traceback (most recent call last):
+  File "G:\My Drive\00_CONTROL_ROOM\app.py", line 201, in scan_worker
+    c.execute("""UPDATE items SET parent_id=?, name=?, abs_path=?, item_type=?,
+sqlite3.DatabaseError: database disk image is malformed
+2026-10-18 20:50:21,512 | ERROR | scan failed: database disk image is malformed
+Traceback (most recent call last):
+  File "G:\My Drive\00_CONTROL_ROOM\app.py", line 201, in scan_worker
+    c.execute("""UPDATE items SET parent_id=?, name=?, abs_path=?, item_type=?,
+sqlite3.DatabaseError: database disk image is malformed
+2026-10-18 20:50:57,979 | ERROR | scan failed: database disk image is malformed
+Traceback (most recent call last):
+  File "G:\My Drive\00_CONTROL_ROOM\app.py", line 201, in scan_worker
+    c.execute("""UPDATE items SET parent_id=?, name=?, abs_path=?, item_type=?,
+sqlite3.DatabaseError: database disk image is malformed
+2026-10-18 20:50:58,479 | ERROR | scan failed: database disk image is malformed
+Traceback (most recent call last):
+  File "G:\My Drive\00_CONTROL_ROOM\app.py", line 201, in scan_worker
+    c.execute("""UPDATE items SET parent_id=?, name=?, abs_path=?, item_type=?,
+sqlite3.DatabaseError: database disk image is malformed
+2026-10-18 20:50:58,663 | ERROR | scan failed: database disk image is malformed
+Traceback (most recent call last):
+  File "G:\My Drive\00_CONTROL_ROOM\app.py", line 201, in scan_worker
+    c.execute("""UPDATE items SET parent_id=?, name=?, abs_path=?, item_type=?,
+sqlite3.DatabaseError: database disk image is malformed
+2026-10-18 21:38:21,265 [INFO] Scan 1792339701 started at G:\My Drive
+2026-10-18 21:38:21,281 [ERROR] Scan 1792339701 crashed: tuple indices must be integers or slices, not str
+Traceback (most recent call last):
+  File "C:\Users\lieod\Downloads\00_CONTROL_ROOM\control_room\app.py", line 375, in run_scan
+    classify_and_upsert(conn, Path(entry.path), None, 0, scan_id, {"under_course_root": False})
+  File "C:\Users\lieod\Downloads\00_CONTROL_ROOM\control_room\app.py", line 278, in classify_and_upsert
+    item_id = row["id"]
+              ~~~^^^^^^
+TypeError: tuple indices must be integers or slices, not str
+2026-10-18 22:47:27,172 [INFO] Scan 1792343847 started at G:\My Drive
+2026-10-18 22:47:27,205 [ERROR] Scan 1792343847 crashed: tuple indices must be integers or slices, not str
+Traceback (most recent call last):
+  File "C:\Users\lieod\Downloads\00_CONTROL_ROOM\control_room\app.py", line 375, in run_scan
+    classify_and_upsert(conn, Path(entry.path), None, 0, scan_id, {"under_course_root": False})
+  File "C:\Users\lieod\Downloads\00_CONTROL_ROOM\control_room\app.py", line 278, in classify_and_upsert
+    item_id = row["id"]
+              ~~~^^^^^^
+TypeError: tuple indices must be integers or slices, not str
+2026-10-18 22:47:27,372 [INFO] Scan 1792343847 started at G:\My Drive
+2026-10-18 22:47:27,380 [ERROR] Scan 1792343847 crashed: tuple indices must be integers or slices, not str
+Traceback (most recent call last):
+  File "C:\Users\lieod\Downloads\00_CONTROL_ROOM\control_room\app.py", line 375, in run_scan
+    classify_and_upsert(conn, Path(entry.path), None, 0, scan_id, {"under_course_root": False})
+  File "C:\Users\lieod\Downloads\00_CONTROL_ROOM\control_room\app.py", line 278, in classify_and_upsert
+    item_id = row["id"]
+              ~~~^^^^^^
+TypeError: tuple indices must be integers or slices, not str
+2026-10-18 22:47:27,574 [INFO] Scan 1792343847 started at G:\My Drive
+2026-10-18 22:47:27,580 [ERROR] Scan 1792343847 crashed: tuple indices must be integers or slices, not str
+Traceback (most recent call last):
+  File "C:\Users\lieod\Downloads\00_CONTROL_ROOM\control_room\app.py", line 375, in run_scan
+    classify_and_upsert(conn, Path(entry.path), None, 0, scan_id, {"under_course_root": False})
+  File "C:\Users\lieod\Downloads\00_CONTROL_ROOM\control_room\app.py", line 278, in classify_and_upsert
+    item_id = row["id"]
+              ~~~^^^^^^
+TypeError: tuple indices must be integers or slices, not str
+2026-10-18 23:24:28,322 | ERROR | scan failed: database disk image is malformed
+Traceback (most recent call last):
+  File "G:\My Drive\00_CONTROL_ROOM\app.py", line 201, in scan_worker
+    c.execute("""UPDATE items SET parent_id=?, name=?, abs_path=?, item_type=?,
+sqlite3.DatabaseError: database disk image is malformed
+2026-10-18 23:55:49,740 | ERROR | scan failed: database disk image is malformed
+Traceback (most recent call last):
+  File "G:\My Drive\00_CONTROL_ROOM\app.py", line 137, in scan_worker
+    c.execute("UPDATE scan_log SET finished_at=?, status='ok', total_folders=?, total_files=?, errors=? WHERE id=?", (datetime.utcnow().isoformat(), SCAN_STATE["total_folders"], SCAN_STATE["total_files"], SCAN_STATE["errors"], scan_id))
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+sqlite3.DatabaseError: database disk image is malformed

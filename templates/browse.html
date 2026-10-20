@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block breadcrumbs %}
+  <a href="/browse" class="text-decoration-none text-muted">Docs</a> 
+  {% for b in breadcrumbs %}
+    <span class="mx-1">/</span><a href="/browse?path={{ b.path|urlencode }}" class="text-decoration-none text-dark fw-bold">{{ b.name }}</a>
+  {% endfor %}
+{% endblock %}
+{% block body %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h2 class="h4 mb-0 fw-bold">Documents</h2>
+</div>
+
+{% if error %}<div class="alert alert-danger">{{ error }}</div>{% endif %}
+
+{% set folders = items | selectattr("item_type", "equalto", "folder") | list %}
+{% set files = items | selectattr("item_type", "equalto", "file") | list %}
+
+{% if folders %}
+<h5 class="mb-3 text-muted fw-bold"><i class="bi bi-folder2 me-2"></i>Subfolders</h5>
+<div class="folder-grid mb-5">
+  {% for it in folders %}
+  <a href="/browse?path={{ it.rel_path|urlencode }}" class="folder-card">
+    <div class="folder-icon-wrapper"><i class="bi bi-folder-fill text-warning"></i></div>
+    <div class="folder-info">
+      <div class="folder-name text-truncate" title="{{ it.name }}">{{ it.name }}</div>
+      <div class="folder-meta">Folder</div>
+    </div>
+  </a>
+  {% endfor %}
+</div>
+{% endif %}
+
+<h5 class="mb-3 text-muted fw-bold"><i class="bi bi-file-earmark-text me-2"></i>Files</h5>
+<div class="folder-grid">
+  {% for it in files %}
+  <div class="folder-card" style="cursor:pointer" onclick="openLocalFile({{ it.id }}, '{{ it.name }}')">
+    <div class="folder-icon-wrapper">
+      {% set ext = it.ext|lower %}
+      {% if ext in ['doc', 'docx'] %}
+        <i class="bi bi-file-earmark-word text-primary"></i>
+      {% elif ext in ['xls', 'xlsx', 'csv'] %}
+        <i class="bi bi-file-earmark-excel text-success"></i>
+      {% elif ext in ['ppt', 'pptx'] %}
+        <i class="bi bi-file-earmark-ppt text-danger"></i>
+      {% elif ext == 'pdf' %}
+        <i class="bi bi-file-earmark-pdf text-danger"></i>
+      {% elif ext in ['zip', 'rar', '7z'] %}
+        <i class="bi bi-file-earmark-zip text-warning"></i>
+      {% elif ext in ['jpg', 'jpeg', 'png', 'gif'] %}
+        <i class="bi bi-file-earmark-image text-info"></i>
+      {% elif ext in ['mp4', 'mkv', 'avi'] %}
+        <i class="bi bi-file-earmark-play text-danger"></i>
+      {% else %}
+        <i class="bi bi-file-earmark-code text-secondary"></i>
+      {% endif %}
+    </div>
+    <div class="folder-info">
+      <div class="folder-name text-truncate" title="{{ it.name }}">{{ it.name }}</div>
+      <div class="folder-meta">{{ it.ext|upper if it.ext else 'FILE' }}</div>
+    </div>
+  </div>
+  {% else %}
+  <div class="alert alert-info w-100">No files found.</div>
+  {% endfor %}
+</div>
+
+<script>
+async function openLocalFile(id, name) {
+    const res = await fetch('/api/open_file/' + id, {method: 'POST'});
+    const data = await res.json();
+    if(!data.ok) alert('Error: ' + data.error);
+}
+</script>
+{% endblock %}

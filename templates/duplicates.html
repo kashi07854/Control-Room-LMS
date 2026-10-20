@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block breadcrumbs %}Tools / Duplicate Finder{% endblock %}
+{% block body %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h2 class="h4 mb-0 fw-bold"><i class="bi bi-files text-primary me-2"></i>Duplicate Files</h2>
+  <p class="text-muted mb-0">Same size aur content wali files (Space free karne ke liye).</p>
+</div>
+{% if groups %}
+  {% for g in groups %}
+  <div class="card mb-3 border-0 shadow-sm rounded-3">
+    <div class="card-header bg-white border-bottom p-3">
+      <strong>{{ (g.size / 1024)|round(1) }} KB</strong> size ki {{ g.files|length }} copies mili:
+    </div>
+    <ul class="list-group list-group-flush">
+      {% for f in g.files %}
+      <li class="list-group-item d-flex justify-content-between align-items-center p-3">
+        <div class="text-truncate" style="max-width: 70%;">
+          <i class="bi bi-file-earmark-text text-primary me-2"></i>{{ f.name }}
+          <div class="small text-muted">{{ f.rel_path }}</div>
+        </div>
+        <button class="btn btn-sm btn-outline-secondary" onclick="openExplorer('{{ f.rel_path }}')">Open</button>
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
+  {% endfor %}
+{% else %}
+  <div class="alert alert-success">Koi duplicate file nahi mili! Aapka Drive ekdum clean hai.</div>
+{% endif %}
+{% endblock %}

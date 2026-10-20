@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block breadcrumbs %}Workspace / Flashcards{% endblock %}
+{% block body %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h2 class="h4 mb-0 fw-bold"><i class="bi bi-card-heading text-primary me-2"></i>Flashcards</h2>
+</div>
+
+<div class="row">
+  {% for c in cards %}
+  <div class="col-md-4 mb-4">
+    <div class="card border-0 shadow-sm rounded-3 h-100 p-3 position-relative">
+      <button class="btn btn-sm btn-link text-danger position-absolute top-0 end-0 p-3" onclick="delCard({{ c.id }})"><i class="bi bi-trash"></i></button>
+      <div class="small text-muted mb-2">Question</div>
+      <h5 class="fw-bold mb-3">{{ c.question }}</h5>
+      <div class="small text-muted mb-2">Answer</div>
+      <p class="text-success fw-medium">{{ c.answer }}</p>
+    </div>
+  </div>
+  {% else %}
+  <div class="col-12"><div class="alert alert-info">Abhi koi flashcard nahi bana hai. Kisi file ke page pe jaakar "Add Flashcard" dabayein.</div></div>
+  {% endfor %}
+</div>
+<script>
+async function delCard(id){
+  if(!confirm('Delete this flashcard?')) return;
+  await fetch('/api/flashcards/'+id, {method:'DELETE'});
+  location.reload();
+}
+</script>
+{% endblock %}

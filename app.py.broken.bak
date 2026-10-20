@@ -1,0 +1,877 @@
+"""Control Room + LMS - safe, local, non-destructive file indexer."""
+import os, sys, json, hashlib, urllib.request
+import urllib.error, sqlite3, threading, subprocess, logging, ctypes, time
+from pathlib import Path
+from datetime import datetime
+from logging.handlers import RotatingFileHandler
+from flask import Flask, render_template, request, jsonify, abort, send_file
+import html
+
+BASE = Path(__file__).resolve().parent
+
+def load_config():
+    with open(BASE / "config.json", "r", encoding="utf-8") as f:
+        return json.load(f)
+
+CONFIG     = load_config()
+ROOT       = Path(CONFIG["root_path"]).resolve()
+DB_PATH    = Path(CONFIG["db_path"]).resolve()
+EXCLUDES   = set(CONFIG.get("exclude_names", []))
+COURSE_ROOTS = CONFIG.get("course_roots", [])
+PAGE_SIZE  = int(CONFIG.get("page_size", 500))
+
+for sub in ("data", "data/exports", "logs", "backups"):
+    (BASE / sub).mkdir(parents=True, exist_ok=True)
+
+def _log(name, fname):
+    lg = logging.getLogger(name)
+    lg.setLevel(logging.INFO)
+    h = RotatingFileHandler(BASE / "logs" / fname, maxBytes=2_000_000, backupCount=3, encoding="utf-8")
+    h.setFormatter(logging.Formatter("%(asctime)s | %(levelname)s | %(message)s"))
+    lg.addHandler(h)
+    s = logging.StreamHandler(sys.stdout)
+    s.setFormatter(logging.Formatter("%(asctime)s | %(levelname)s | %(message)s"))
+    lg.addHandler(s)
+    return lg
+
+app_log  = _log("app",  "app.log")
+scan_log = _log("scan", "scan.log")
+
+def db_conn():
+    c = sqlite3.connect(DB_PATH, timeout=30)
+    c.row_factory = sqlite3.Row
+    c.execute("PRAGMA journal_mode=WAL")
+    c.execute("PRAGMA foreign_keys=ON")
+    c.execute("PRAGMA busy_timeout=30000")
+    return c
+
+SCHEMA = """
+CREATE TABLE IF NOT EXISTS items (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    parent_id INTEGER,
+    name TEXT NOT NULL,
+    rel_path TEXT NOT NULL UNIQUE,
+    abs_path TEXT NOT NULL,
+    item_type TEXT NOT NULL CHECK(item_type IN ('file','folder')),
+    ext TEXT,
+    size INTEGER,
+    mtime REAL,
+    depth INTEGER,
+    is_course_root INTEGER DEFAULT 0,
+    is_course INTEGER DEFAULT 0,
+    is_unit INTEGER DEFAULT 0,
+    is_deleted INTEGER DEFAULT 0,
+    is_cloud_placeholder INTEGER DEFAULT 0,
+    created_at TEXT,
+    updated_at TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_items_parent  ON items(parent_id);
+CREATE INDEX IF NOT EXISTS idx_items_rel     ON items(rel_path);
+CREATE INDEX IF NOT EXISTS idx_items_type    ON items(item_type);
+CREATE INDEX IF NOT EXISTS idx_items_deleted ON items(is_deleted);
+CREATE INDEX IF NOT EXISTS idx_items_course  ON items(is_course);
+
+CREATE TABLE IF NOT EXISTS progress (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    item_id INTEGER UNIQUE NOT NULL REFERENCES items(id) ON DELETE CASCADE,
+    status TEXT NOT NULL CHECK(status IN ('not_started','in_progress','completed')) DEFAULT 'not_started',
+    percent INTEGER NOT NULL DEFAULT 0 CHECK(percent BETWEEN 0 AND 100),
+    updated_at TEXT
+);
+
+CREATE TABLE IF NOT EXISTS notes (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    item_id INTEGER NOT NULL UNIQUE REFERENCES items(id) ON DELETE CASCADE,
+    note_text TEXT NOT NULL DEFAULT '',
+    updated_at TEXT
+);
+
+CREATE TABLE IF NOT EXISTS favorites (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    item_id INTEGER NOT NULL UNIQUE REFERENCES items(id) ON DELETE CASCADE,
+    created_at TEXT
+);
+
+CREATE TABLE IF NOT EXISTS scan_log (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    started_at TEXT,
+    finished_at TEXT,
+    status TEXT,
+    total_folders INTEGER DEFAULT 0,
+    total_files INTEGER DEFAULT 0,
+    errors INTEGER DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT);
+CREATE TABLE IF NOT EXISTS flashcards (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    item_id INTEGER REFERENCES items(id) ON DELETE CASCADE,
+    question TEXT NOT NULL,
+    answer TEXT NOT NULL,
+    status TEXT DEFAULT 'new',
+    created_at TEXT
+);
+CREATE TABLE IF NOT EXISTS time_sessions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    item_id INTEGER NOT NULL REFERENCES items(id) ON DELETE CASCADE,
+    duration_seconds INTEGER NOT NULL DEFAULT 0,
+    recorded_at TEXT
+);
+CREATE TABLE IF NOT EXISTS tags (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL UNIQUE
+);
+CREATE TABLE IF NOT EXISTS item_tags (
+    item_id INTEGER NOT NULL REFERENCES items(id) ON DELETE CASCADE,
+    tag_id INTEGER NOT NULL REFERENCES tags(id) ON DELETE CASCADE,
+    PRIMARY KEY (item_id, tag_id)
+);
+"""
+
+def init_db():
+    c = db_conn()
+    c.executescript(SCHEMA)
+    c.execute("UPDATE scan_log SET status='interrupted' WHERE status='running'")
+    c.commit()
+    c.close()
+
+SCAN_STATE = {"running": False, "finished": None, "done": 0, "current": "",
+              "errors": 0, "total_files": 0, "total_folders": 0}
+SCAN_LOCK  = threading.Lock()
+
+def is_cloud_placeholder(p):
+    try:
+        FILE_ATTRIBUTE_OFFLINE               = 0x1000
+        FILE_ATTRIBUTE_RECALL_ON_DATA_ACCESS = 0x400000
+        attrs = ctypes.windll.kernel32.GetFileAttributesW(str(p))
+        if attrs == 0xFFFFFFFF:
+            return False
+        return bool(attrs & (FILE_ATTRIBUTE_OFFLINE | FILE_ATTRIBUTE_RECALL_ON_DATA_ACCESS))
+    except Exception:
+        return False
+
+def safe_walk(root):
+    stack = [(root, 0)]
+    while stack:
+        current, depth = stack.pop()
+        try:
+            entries = list(os.scandir(current))
+        except (PermissionError, OSError) as e:
+            scan_log.warning(f"skip {current}: {e}")
+            SCAN_STATE["errors"] += 1
+            continue
+        for entry in entries:
+            try:
+                if entry.name in EXCLUDES:
+                    continue
+                if entry.is_symlink():
+                    continue
+                p = Path(entry.path)
+                if entry.is_dir(follow_symlinks=False):
+                    yield (p, depth + 1, True)
+                    stack.append((p, depth + 1))
+                elif entry.is_file(follow_symlinks=False):
+                    yield (p, depth + 1, False)
+            except OSError as e:
+                scan_log.warning(f"stat fail {entry.path}: {e}")
+                SCAN_STATE["errors"] += 1
+
+def classify(rel, is_dir):
+    parts = rel.split(os.sep)
+    if not parts or parts[0] not in COURSE_ROOTS:
+        return (0, 0, 0)
+    if len(parts) == 1 and is_dir:  return (1, 0, 0)
+    if len(parts) == 2 and is_dir:  return (0, 1, 0)
+    if len(parts) >= 3 and is_dir:  return (0, 0, 1)
+    return (0, 0, 0)
+
+def get_parent_id(c, rel):
+    parent = str(Path(rel).parent) if (os.sep in rel) else ""
+    if parent in ("", "."):
+        return None
+    row = c.execute("SELECT id FROM items WHERE rel_path=?", (parent,)).fetchone()
+    return row["id"] if row else None
+
+def scan_worker():
+    with SCAN_LOCK:
+        if SCAN_STATE["running"]:
+            return
+        SCAN_STATE.update({"running": True, "finished": None, "done": 0,
+                           "current": "", "errors": 0,
+                           "total_files": 0, "total_folders": 0})
+    c = db_conn()
+    scan_id = None
+    try:
+        cur = c.execute("INSERT INTO scan_log(started_at, status) VALUES (?, 'running')",
+                        (datetime.utcnow().isoformat(),))
+        scan_id = cur.lastrowid
+        c.commit()
+
+        seen = set()
+        now  = datetime.utcnow().isoformat()
+
+        for abs_path, depth, is_dir in safe_walk(ROOT):
+            try:
+                rel = str(abs_path.relative_to(ROOT))
+            except ValueError:
+                continue
+            if not rel or rel.startswith(".."):
+                continue
+            seen.add(rel)
+            SCAN_STATE["current"] = rel
+
+            try:
+                st = abs_path.stat()
+                size, mtime = (0, 0) if is_dir else (st.st_size, st.st_mtime)
+            except OSError:
+                size, mtime = 0, 0
+
+            ext         = "" if is_dir else abs_path.suffix.lower().lstrip(".")
+            placeholder = 0 if is_dir else (1 if is_cloud_placeholder(abs_path) else 0)
+            cr, co, un  = classify(rel, is_dir)
+            parent_id   = get_parent_id(c, rel)
+
+            existing = c.execute("SELECT id FROM items WHERE rel_path=?", (rel,)).fetchone()
+            if existing:
+                c.execute("""UPDATE items SET parent_id=?, name=?, abs_path=?, item_type=?,
+                             ext=?, size=?, mtime=?, depth=?, is_course_root=?, is_course=?,
+                             is_unit=?, is_deleted=0, is_cloud_placeholder=?, updated_at=?
+                             WHERE id=?""",
+                          (parent_id, abs_path.name, str(abs_path),
+                           "folder" if is_dir else "file", ext, size, mtime, depth,
+                           cr, co, un, placeholder, now, existing["id"]))
+            else:
+                c.execute("""INSERT INTO items(parent_id, name, rel_path, abs_path, item_type,
+                             ext, size, mtime, depth, is_course_root, is_course, is_unit,
+                             is_cloud_placeholder, created_at, updated_at)
+                             VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                          (parent_id, abs_path.name, rel, str(abs_path),
+                           "folder" if is_dir else "file", ext, size, mtime, depth,
+                           cr, co, un, placeholder, now, now))
+
+            SCAN_STATE["done"] += 1
+            if is_dir: SCAN_STATE["total_folders"] += 1
+            else:      SCAN_STATE["total_files"]   += 1
+            if SCAN_STATE["done"] % 200 == 0:
+                c.commit()
+
+        if seen:
+            c.execute("CREATE TEMP TABLE IF NOT EXISTS seen_rel (rel TEXT PRIMARY KEY)")
+            c.execute("DELETE FROM seen_rel")
+            c.executemany("INSERT OR IGNORE INTO seen_rel(rel) VALUES (?)", [(r,) for r in seen])
+            c.execute("UPDATE items SET is_deleted=1 WHERE is_deleted=0 AND rel_path NOT IN (SELECT rel FROM seen_rel)")
+            c.execute("DROP TABLE seen_rel")
+
+        c.execute("""UPDATE scan_log SET finished_at=?, status='ok', total_folders=?,
+                     total_files=?, errors=? WHERE id=?""",
+                  (datetime.utcnow().isoformat(), SCAN_STATE["total_folders"],
+                   SCAN_STATE["total_files"], SCAN_STATE["errors"], scan_id))
+        c.commit()
+        scan_log.info(f"scan complete: {SCAN_STATE['total_files']} files, "
+                      f"{SCAN_STATE['total_folders']} folders, {SCAN_STATE['errors']} errors")
+    except Exception as e:
+        scan_log.exception(f"scan failed: {e}")
+        try:
+            c.execute("UPDATE scan_log SET finished_at=?, status='error', errors=errors+1 WHERE id=?",
+                      (datetime.utcnow().isoformat(), scan_id))
+            c.commit()
+        except Exception:
+            pass
+    finally:
+        c.close()
+        SCAN_STATE["running"]  = False
+        SCAN_STATE["finished"] = time.time()
+
+def safe_resolve(rel):
+    if not rel:
+        return ROOT
+    rel = rel.replace("\\", "/").strip("/")
+    if any(p == ".." for p in rel.split("/")):
+        abort(400)
+    target = (ROOT / rel).resolve()
+    try:
+        target.relative_to(ROOT)
+    except ValueError:
+        abort(400)
+    return target
+
+app = Flask(__name__)
+app.secret_key = os.urandom(24).hex()
+
+@app.route("/")
+def dashboard():
+    c = db_conn()
+    try:
+        total_files   = c.execute("SELECT COUNT(*) c FROM items WHERE item_type='file'   AND is_deleted=0").fetchone()["c"]
+        total_folders = c.execute("SELECT COUNT(*) c FROM items WHERE item_type='folder' AND is_deleted=0").fetchone()["c"]
+        courses       = c.execute("SELECT id,name,rel_path FROM items WHERE is_course=1 AND is_deleted=0 ORDER BY name LIMIT 50").fetchall()
+        prog = c.execute("""SELECT p.status, COUNT(*) c FROM progress p JOIN items i ON p.item_id=i.id
+                            WHERE i.item_type='file' AND i.is_deleted=0 GROUP BY p.status""").fetchall()
+        status_counts = {"not_started": 0, "in_progress": 0, "completed": 0}
+        for r in prog: status_counts[r["status"]] = r["c"]
+        total_prog = sum(status_counts.values())
+        overall    = (status_counts["completed"] / total_prog * 100) if total_prog else 0.0
+        recent     = c.execute("""SELECT id,name,rel_path,item_type,mtime FROM items
+                                  WHERE is_deleted=0 AND item_type='file'
+                                  ORDER BY mtime DESC LIMIT 10""").fetchall()
+        continue_items = c.execute("""
+            SELECT i.id, i.name, i.rel_path, p.updated_at
+            FROM items i JOIN progress p ON p.item_id=i.id
+            WHERE p.status='in_progress' AND i.is_deleted=0
+            ORDER BY p.updated_at DESC LIMIT 5
+        """).fetchall()
+        total_seconds = c.execute("SELECT COALESCE(SUM(duration_seconds),0) s FROM time_sessions").fetchone()["s"]
+        total_hours = round(total_seconds / 3600, 1)
+        last_scan  = c.execute("SELECT * FROM scan_log ORDER BY id DESC LIMIT 1").fetchone()
+    finally:
+        c.close()
+    heatmap, weeks = get_heatmap_data()
+    return render_template("dashboard.html",
+        total_files=total_files, total_folders=total_folders, courses=courses,
+        status_counts=status_counts, overall=overall, recent=recent, last_scan=last_scan,
+        heatmap=heatmap, total_hours=total_hours, continue_items=continue_items)
+@app.route("/browse")
+def browse():
+    rel = request.args.get("path", "")
+    target = safe_resolve(rel)
+    if not target.exists() or not target.is_dir():
+        return render_template("browse.html", error="Folder not found",
+                               rel=rel, items=[], breadcrumbs=[]), 404
+    c = db_conn()
+    try:
+        rel_norm = str(target.relative_to(ROOT)).replace("\\", "/")
+        if rel_norm == ".":
+            rel_norm = ""
+        if rel_norm:
+            items = c.execute("""SELECT id,name,rel_path,item_type,ext,size,mtime,
+                                 is_course,is_unit,is_deleted FROM items
+                                 WHERE parent_id=(SELECT id FROM items WHERE rel_path=?)
+                                 ORDER BY item_type DESC, name COLLATE NOCASE LIMIT ?""",
+                              (rel_norm, PAGE_SIZE)).fetchall()
+        else:
+            items = c.execute("""SELECT id,name,rel_path,item_type,ext,size,mtime,
+                                 is_course,is_unit,is_deleted FROM items
+                                 WHERE parent_id IS NULL
+                                 ORDER BY item_type DESC, name COLLATE NOCASE LIMIT ?""",
+                              (PAGE_SIZE,)).fetchall()
+        breadcrumbs = []
+        if rel_norm:
+            parts = rel_norm.split("/")
+            for i, p in enumerate(parts):
+                breadcrumbs.append({"name": p, "path": "/".join(parts[:i + 1])})
+        return render_template("browse.html", items=items, rel=rel_norm,
+                               breadcrumbs=breadcrumbs, error=None)
+    finally:
+        c.close()
+
+@app.route("/search")
+def search():
+    q      = request.args.get("q", "").strip()
+    status = request.args.get("status", "")
+    typ    = request.args.get("type", "")
+    c = db_conn()
+    try:
+        sql = """SELECT i.id, i.name, i.rel_path, i.item_type, i.ext, i.size, i.mtime,
+                        COALESCE(p.status,'not_started') status
+                 FROM items i LEFT JOIN progress p ON p.item_id=i.id
+                 WHERE i.is_deleted=0"""
+        params = []
+        if q:
+            sql += " AND (i.name LIKE ? OR i.rel_path LIKE ?)"
+            params += [f"%{q}%", f"%{q}%"]
+        if typ in ("file", "folder"):
+            sql += " AND i.item_type = ?"
+            params.append(typ)
+        if status:
+            sql += " AND COALESCE(p.status,'not_started') = ?"
+            params.append(status)
+        sql += " ORDER BY i.item_type DESC, i.name COLLATE NOCASE LIMIT 500"
+        results = c.execute(sql, params).fetchall()
+        return render_template("search.html", results=results, q=q,
+                               status_filter=status, type_filter=typ)
+    finally:
+        c.close()
+
+@app.route("/progress")
+def progress_page():
+    c = db_conn()
+    try:
+        rows = c.execute("""
+            SELECT i.id, i.name, i.rel_path, i.item_type,
+                   COALESCE(p.status,'not_started') status,
+                   COALESCE(p.percent,0) percent
+            FROM items i LEFT JOIN progress p ON p.item_id=i.id
+            WHERE i.is_deleted=0 AND i.item_type='file'
+            ORDER BY i.rel_path COLLATE NOCASE LIMIT 500
+        """).fetchall()
+        return render_template("progress.html", rows=rows)
+    finally:
+        c.close()
+
+@app.route("/course/<int:item_id>")
+def course(item_id):
+    c = db_conn()
+    try:
+        item = c.execute("SELECT * FROM items WHERE id=?", (item_id,)).fetchone()
+        if not item:
+            abort(404)
+        children = c.execute("""
+            SELECT i.*, COALESCE(p.status,'not_started') status, COALESCE(p.percent,0) percent
+            FROM items i LEFT JOIN progress p ON p.item_id=i.id
+            WHERE i.parent_id=? AND i.is_deleted=0
+            ORDER BY i.item_type DESC, i.name COLLATE NOCASE LIMIT ?
+        """, (item_id, PAGE_SIZE)).fetchall()
+        files = c.execute("""
+            SELECT COALESCE(p.status,'not_started') status FROM items i
+            LEFT JOIN progress p ON p.item_id=i.id
+            WHERE i.rel_path LIKE ? AND i.item_type='file' AND i.is_deleted=0
+        """, (item["rel_path"] + os.sep + "%",)).fetchall()
+        statuses = {"not_started": 0, "in_progress": 0, "completed": 0}
+        for f in files:
+            statuses[f["status"]] += 1
+        total   = sum(statuses.values())
+        overall = (statuses["completed"] / total * 100) if total else 0.0
+        return render_template("course.html", course=item, children=children,
+                               statuses=statuses, overall=overall, total=total)
+    finally:
+        c.close()
+
+@app.route("/unit/<int:item_id>")
+def unit(item_id):
+    c = db_conn()
+    try:
+        item = c.execute("SELECT * FROM items WHERE id=?", (item_id,)).fetchone()
+        if not item:
+            abort(404)
+        prog = c.execute("SELECT * FROM progress  WHERE item_id=?", (item_id,)).fetchone()
+        note = c.execute("SELECT * FROM notes     WHERE item_id=?", (item_id,)).fetchone()
+        fav  = c.execute("SELECT * FROM favorites WHERE item_id=?", (item_id,)).fetchone()
+        return render_template("unit.html", item=item,
+            status=prog["status"] if prog else "not_started",
+            percent=prog["percent"] if prog else 0,
+            note=note["note_text"] if note else "",
+            favorite=bool(fav))
+    finally:
+        c.close()
+
+@app.route("/settings")
+def settings_page():
+    return render_template("settings.html", config=CONFIG)
+
+@app.route("/api/scan", methods=["POST"])
+def api_scan():
+    if SCAN_STATE["running"]:
+        return jsonify({"ok": False, "error": "Scan already running"}), 409
+    threading.Thread(target=scan_worker, daemon=True).start()
+    return jsonify({"ok": True})
+
+@app.route("/api/scan_status")
+def api_scan_status():
+    return jsonify(SCAN_STATE)
+
+@app.route("/api/tree")
+def api_tree():
+    rel = request.args.get("path", "")
+    target = safe_resolve(rel)
+    if not target.exists():
+        return jsonify({"ok": False, "error": "Not found"}), 404
+    c = db_conn()
+    try:
+        rel_norm = str(target.relative_to(ROOT)).replace("\\", "/")
+        if rel_norm == ".":
+            rel_norm = ""
+        if rel_norm:
+            rows = c.execute("""SELECT id,name,rel_path,item_type,ext,size,mtime
+                                FROM items WHERE parent_id=(SELECT id FROM items WHERE rel_path=?)
+                                AND is_deleted=0 ORDER BY item_type DESC, name""",
+                             (rel_norm,)).fetchall()
+        else:
+            rows = c.execute("""SELECT id,name,rel_path,item_type,ext,size,mtime
+                                FROM items WHERE parent_id IS NULL AND is_deleted=0
+                                ORDER BY item_type DESC, name""").fetchall()
+        return jsonify({"ok": True, "items": [dict(r) for r in rows]})
+    finally:
+        c.close()
+
+@app.route("/api/progress", methods=["POST"])
+def api_progress():
+    data = request.get_json(silent=True) or {}
+    item_id = data.get("item_id")
+    status  = data.get("status")
+    percent = data.get("percent", 0)
+    if status not in ("not_started", "in_progress", "completed"):
+        return jsonify({"ok": False, "error": "Invalid status"}), 400
+    try:
+        percent = int(percent)
+    except (TypeError, ValueError):
+        return jsonify({"ok": False, "error": "Invalid percent"}), 400
+    if status == "completed":   percent = 100
+    if status == "not_started": percent = 0
+    if not (0 <= percent <= 100):
+        return jsonify({"ok": False, "error": "percent must be 0-100"}), 400
+    c = db_conn()
+    try:
+        if not c.execute("SELECT 1 FROM items WHERE id=?", (item_id,)).fetchone():
+            return jsonify({"ok": False, "error": "Item not found"}), 404
+        c.execute("""INSERT INTO progress(item_id, status, percent, updated_at)
+                     VALUES (?,?,?,?)
+                     ON CONFLICT(item_id) DO UPDATE SET
+                       status=excluded.status, percent=excluded.percent,
+                       updated_at=excluded.updated_at""",
+                  (item_id, status, percent, datetime.utcnow().isoformat()))
+        c.commit()
+        return jsonify({"ok": True})
+    finally:
+        c.close()
+
+@app.route("/api/note", methods=["POST"])
+def api_note():
+    data = request.get_json(silent=True) or {}
+    item_id = data.get("item_id")
+    text    = (data.get("note_text") or "")[:50000]
+    c = db_conn()
+    try:
+        if not c.execute("SELECT 1 FROM items WHERE id=?", (item_id,)).fetchone():
+            return jsonify({"ok": False, "error": "Item not found"}), 404
+        now = datetime.utcnow().isoformat()
+        if c.execute("SELECT 1 FROM notes WHERE item_id=?", (item_id,)).fetchone():
+            c.execute("UPDATE notes SET note_text=?, updated_at=? WHERE item_id=?", (text, now, item_id))
+        else:
+            c.execute("INSERT INTO notes(item_id, note_text, updated_at) VALUES (?,?,?)", (item_id, text, now))
+        c.commit()
+        return jsonify({"ok": True})
+    finally:
+        c.close()
+
+@app.route("/api/notes")
+def api_notes():
+    item_id = request.args.get("item_id", type=int)
+    c = db_conn()
+    try:
+        row = c.execute("SELECT * FROM notes WHERE item_id=?", (item_id,)).fetchone()
+        return jsonify({"ok": True, "note": dict(row) if row else None})
+    finally:
+        c.close()
+
+@app.route("/api/favorite", methods=["POST"])
+def api_favorite():
+    data = request.get_json(silent=True) or {}
+    item_id = data.get("item_id")
+    c = db_conn()
+    try:
+        if not c.execute("SELECT 1 FROM items WHERE id=?", (item_id,)).fetchone():
+            return jsonify({"ok": False, "error": "Item not found"}), 404
+        if c.execute("SELECT 1 FROM favorites WHERE item_id=?", (item_id,)).fetchone():
+            c.execute("DELETE FROM favorites WHERE item_id=?", (item_id,))
+            c.commit()
+            return jsonify({"ok": True, "favorite": False})
+        c.execute("INSERT INTO favorites(item_id, created_at) VALUES (?,?)",
+                  (item_id, datetime.utcnow().isoformat()))
+        c.commit()
+        return jsonify({"ok": True, "favorite": True})
+    finally:
+        c.close()
+
+@app.route("/api/stats")
+def api_stats():
+    c = db_conn()
+    try:
+        return jsonify({"ok": True,
+            "files":   c.execute("SELECT COUNT(*) c FROM items WHERE item_type='file'   AND is_deleted=0").fetchone()["c"],
+            "folders": c.execute("SELECT COUNT(*) c FROM items WHERE item_type='folder' AND is_deleted=0").fetchone()["c"],
+            "courses": c.execute("SELECT COUNT(*) c FROM items WHERE is_course=1 AND is_deleted=0").fetchone()["c"]})
+    finally:
+        c.close()
+
+@app.route("/api/courses")
+def api_courses():
+    c = db_conn()
+    try:
+        rows = c.execute("SELECT id,name,rel_path FROM items WHERE is_course=1 AND is_deleted=0 ORDER BY name").fetchall()
+        return jsonify({"ok": True, "courses": [dict(r) for r in rows]})
+    finally:
+        c.close()
+
+@app.route("/api/open_explorer", methods=["POST"])
+def api_open_explorer():
+    data = request.get_json(silent=True) or {}
+    rel  = data.get("path", "")
+    target = safe_resolve(rel)
+    if not target.exists():
+        return jsonify({"ok": False, "error": "Path not found"}), 404
+    try:
+        if target.is_dir():
+            subprocess.Popen(["explorer", str(target)])
+        else:
+            subprocess.Popen(["explorer", "/select,", str(target)])
+        return jsonify({"ok": True})
+    except Exception as e:
+        return jsonify({"ok": False, "error": str(e)}), 500
+
+@app.route("/api/preview/<int:item_id>")
+def api_preview(item_id):
+    c = db_conn()
+    try:
+        item = c.execute("SELECT * FROM items WHERE id=?", (item_id,)).fetchone()
+    finally:
+        c.close()
+    if not item or item["is_deleted"] or item["item_type"] != "file":
+        return "Not found", 404
+    if item["is_cloud_placeholder"]:
+        return "<div class='alert alert-warning m-3'>Cloud-only file. Download it in Drive first to preview.</div>", 400
+        
+    p = Path(item["abs_path"])
+    if not p.exists():
+        return "<div class='alert alert-danger m-3'>File missing from disk.</div>", 404
+        
+    ext = (item["ext"] or "").lower()
+    if ext in ("jpg", "jpeg", "png", "gif", "webp", "bmp", "svg"):
+        return send_file(p)
+    elif ext == "pdf":
+        return send_file(p, mimetype="application/pdf")
+    elif ext in ("txt", "md", "py", "js", "html", "css", "json", "csv", "log", "c", "cpp", "java"):
+        if p.stat().st_size > 1_000_000:
+            return "<div class='alert alert-warning m-3'>File too large for text preview (>1MB).</div>"
+        try:
+            content = p.read_text(encoding="utf-8")
+        except UnicodeDecodeError:
+            content = p.read_text(encoding="latin-1")
+        return f"<pre style='white-space: pre-wrap; word-wrap: break-word; padding: 16px; font-family: monospace; font-size:13px; margin:0; background:#f8fafc;'>{html.escape(content)}</pre>"
+    
+    return "<div class='alert alert-secondary m-3'>Preview not supported for this file type.</div>", 415
+
+@app.route("/api/tags/<int:item_id>")
+def api_get_tags(item_id):
+    c = db_conn()
+    try:
+        rows = c.execute("""SELECT t.name FROM tags t 
+                            JOIN item_tags it ON t.id = it.tag_id 
+                            WHERE it.item_id = ?""", (item_id,)).fetchall()
+        return jsonify({"ok": True, "tags": [r["name"] for r in rows]})
+    finally:
+        c.close()
+
+@app.route("/api/tags/<int:item_id>", methods=["POST"])
+def api_add_tag(item_id):
+    data = request.get_json(silent=True) or {}
+    tag_name = (data.get("tag_name") or "").strip().lower()
+    if not tag_name or len(tag_name) > 20: return jsonify({"ok": False, "error": "Invalid tag"}), 400
+    c = db_conn()
+    try:
+        c.execute("INSERT OR IGNORE INTO tags(name) VALUES (?)", (tag_name,))
+        tag_id = c.execute("SELECT id FROM tags WHERE name=?", (tag_name,)).fetchone()["id"]
+        c.execute("INSERT OR IGNORE INTO item_tags(item_id, tag_id) VALUES (?,?)", (item_id, tag_id))
+        c.commit()
+        return jsonify({"ok": True})
+    finally:
+        c.close()
+
+@app.route("/api/tags/<int:item_id>/<string:tag_name>", methods=["DELETE"])
+def api_del_tag(item_id, tag_name):
+    c = db_conn()
+    try:
+        c.execute("DELETE FROM item_tags WHERE item_id=? AND tag_id=(SELECT id FROM tags WHERE name=?)", (item_id, tag_name.lower()))
+        c.commit()
+        return jsonify({"ok": True})
+    finally:
+        c.close()
+@app.route("/api/track_time", methods=["POST"])
+def api_track_time():
+    data = request.get_json(silent=True) or {}
+    item_id = data.get("item_id")
+    seconds = data.get("seconds", 0)
+    try: seconds = int(seconds)
+    except: return jsonify({"ok": False}), 400
+    if seconds < 1 or seconds > 7200: return jsonify({"ok": False}), 400
+    c = db_conn()
+    try:
+        c.execute("INSERT INTO time_sessions(item_id, duration_seconds, recorded_at) VALUES (?,?,?)",
+                  (item_id, seconds, datetime.utcnow().isoformat()))
+        c.commit()
+        return jsonify({"ok": True})
+    finally:
+        c.close()
+
+def get_heatmap_data(days=364):
+    from datetime import timedelta, date
+    today = date.today()
+    start = today - timedelta(days=days)
+    while start.weekday() != 6: start -= timedelta(days=1)
+    
+    c = db_conn()
+    try:
+        rows = c.execute("""
+            SELECT substr(recorded_at,1,10) as d, SUM(duration_seconds) as secs
+            FROM time_sessions WHERE recorded_at >= ?
+            GROUP BY substr(recorded_at,1,10)
+        """, (start.isoformat(),)).fetchall()
+        time_map = {r["d"]: r["secs"] for r in rows}
+        
+        prog = c.execute("""
+            SELECT substr(updated_at,1,10) as d, COUNT(*) as c
+            FROM progress WHERE status='completed' AND updated_at >= ?
+            GROUP BY substr(updated_at,1,10)
+        """, (start.isoformat(),)).fetchall()
+        for p in prog:
+            time_map[p["d"]] = time_map.get(p["d"], 0) + (p["c"] * 120)
+    finally:
+        c.close()
+    
+    cells = []
+    cur = start
+    total_weeks = ((today - start).days // 7) + 1
+    for w in range(total_weeks):
+        week = []
+        for d in range(7):
+            day_iso = cur.isoformat()
+            secs = time_map.get(day_iso, 0) if cur <= today else -1
+            if secs < 0: level = -1
+            elif secs == 0: level = 0
+            elif secs < 300: level = 1
+            elif secs < 900: level = 2
+            elif secs < 1800: level = 3
+            else: level = 4
+            week.append({"date": day_iso, "secs": max(0, secs), "level": level})
+            cur += timedelta(days=1)
+        cells.append(week)
+    return cells, total_weeks
+
+@app.route("/api/heatmap")
+def api_heatmap():
+    cells, weeks = get_heatmap_data()
+    return jsonify({"ok": True, "cells": cells, "weeks": weeks})
+# --- Duplicate Finder ---
+@app.route("/tools/duplicates")
+def tools_duplicates():
+    c = db_conn()
+    try:
+        # Find files with same size (potential duplicates)
+        sizes = c.execute("SELECT size, COUNT(*) c FROM items WHERE item_type='file' AND size > 0 AND is_deleted=0 GROUP BY size HAVING c > 1").fetchall()
+        groups = []
+        for s in sizes:
+            files = c.execute("SELECT id, name, rel_path, abs_path, size FROM items WHERE size=? AND item_type='file' AND is_deleted=0", (s["size"],)).fetchall()
+            # Simple hash check for actual duplicates (read first 64KB)
+            hashes = {}
+            for f in files:
+                try:
+                    with open(f["abs_path"], 'rb') as fh:
+                        h = hashlib.md5(fh.read(65536)).hexdigest()
+                    if h not in hashes: hashes[h] = []
+                    hashes[h].append(f)
+                except Exception:
+                    pass
+            for h, matches in hashes.items():
+                if len(matches) > 1:
+                    groups.append({"size": s["size"], "files": matches})
+        return render_template("duplicates.html", groups=groups)
+    finally:
+        c.close()
+
+# --- Flashcards ---
+@app.route("/flashcards")
+def flashcards_page():
+    c = db_conn()
+    try:
+        cards = c.execute("SELECT * FROM flashcards ORDER BY created_at DESC").fetchall()
+        return render_template("flashcards.html", cards=cards)
+    finally:
+        c.close()
+
+@app.route("/api/flashcards", methods=["POST"])
+def api_add_flashcard():
+    data = request.get_json(silent=True) or {}
+    item_id = data.get("item_id")
+    q = data.get("question", "").strip()
+    a = data.get("answer", "").strip()
+    if not q or not a: return jsonify({"ok": False, "error": "Missing Q/A"}), 400
+    c = db_conn()
+    try:
+        c.execute("INSERT INTO flashcards(item_id, question, answer, created_at) VALUES (?,?,?,?)",
+                  (item_id, q, a, datetime.utcnow().isoformat()))
+        c.commit()
+        return jsonify({"ok": True})
+    finally:
+        c.close()
+
+@app.route("/api/flashcards/<int:card_id>", methods=["DELETE"])
+def api_del_flashcard(card_id):
+    c = db_conn()
+    try:
+        c.execute("DELETE FROM flashcards WHERE id=?", (card_id,))
+        c.commit()
+        return jsonify({"ok": True})
+    finally:
+        c.close()
+
+# --- AI Study Buddy (Ollama) ---
+@app.route("/api/ai/chat", methods=["POST"])
+def api_ai_chat():
+    data = request.get_json(silent=True) or {}
+    prompt = data.get("prompt", "")
+    item_id = data.get("item_id")
+    
+    context = ""
+    if item_id:
+        c = db_conn()
+        try:
+            item = c.execute("SELECT abs_path, ext FROM items WHERE id=?", (item_id,)).fetchone()
+            if item and item["ext"] in ("txt", "md", "py", "js", "csv", "json"):
+                try:
+                    with open(item["abs_path"], "r", encoding="utf-8") as f:
+                        context = f.read(8000) # Read first 8k chars
+                except: pass
+        finally:
+            c.close()
+            
+    full_prompt = f"Context:\n{context}\n\nUser Question: {prompt}\n\nAnswer:" if context else prompt
+    
+    try:
+        req = urllib.request.Request(
+            "http://127.0.0.1:11434/api/generate",
+            data=json.dumps({"model": "llama3", "prompt": full_prompt, "stream": False}).encode('utf-8'),
+            headers={'Content-Type': 'application/json'}
+        )
+        with urllib.request.urlopen(req, timeout=60) as response:
+            res = json.loads(response.read().decode())
+            return jsonify({"ok": True, "response": res.get("response", "")})
+    except Exception as e:
+        return jsonify({"ok": False, "error": "Ollama connect nahi hua. Kya aapne 'ollama run llama3' run kiya hai?"})
+@app.errorhandler(404)
+def err404(e):
+    return "<h2 style='font-family:sans-serif;padding:24px'>404 - Page not found - <a href='/'>Go to Dashboard</a></h2>", 404
+
+@app.errorhandler(500)
+def err500(e):
+    app_log.exception("500 error")
+    return "<h2 style='font-family:sans-serif;padding:24px'>500 - Internal error - <a href='/'>Go to Dashboard</a></h2>", 500
+
+def create_startup_backup():
+    import shutil
+    bdir = BASE / "backups"
+    bdir.mkdir(exist_ok=True)
+    if DB_PATH.exists():
+        ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+        dst = bdir / f"index_{ts}.db"
+        try:
+            c = db_conn()
+            bck = sqlite3.connect(dst)
+            c.backup(bck)
+            bck.close()
+            c.close()
+            app_log.info(f"Backup created: {dst.name}")
+            # Keep only last 5 backups
+            backups = sorted(bdir.glob("index_*.db"))
+            if len(backups) > 5:
+                for old in backups[:-5]:
+                    old.unlink()
+        except Exception as e:
+            app_log.error(f"Backup failed: {e}")
+
+if __name__ == "__main__":
+    init_db()
+    create_startup_backup()
+    app_log.info("Control Room starting")
+    print("\n" + "=" * 60)
+    print(f"  Control Room -> http://{CONFIG['host']}:{CONFIG['port']}")
+    print("=" * 60 + "\n")
+    app.run(host=CONFIG["host"], port=CONFIG["port"], debug=False, use_reloader=False)

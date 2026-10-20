@@ -1,0 +1,263 @@
+{% extends "base.html" %}
+{% block breadcrumbs %}
+  <a href="/browse?path={{ item.rel_path.rsplit('/',1)[0] if '/' in item.rel_path else '' }}" class="text-decoration-none text-muted">Back</a>
+  <span class="mx-1">/</span><span class="text-dark fw-bold">{{ item.name }}</span>
+{% endblock %}
+{% block body %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h2 class="h4 mb-0 fw-bold">
+    <i class="bi bi-file-earmark-text text-primary me-2"></i>{{ item.name }}
+  </h2>
+  <div>
+    <button class="btn btn-sm btn-outline-secondary" onclick="openExplorer('{{ item.rel_path }}')"><i class="bi bi-folder-symlink"></i> Open in Explorer</button>
+  </div>
+</div>
+
+<!-- Tags Area -->
+<div class="tags-container mb-4 p-3 bg-white border rounded-3 d-flex align-items-center flex-wrap gap-2" style="border-radius:12px;">
+  <span class="text-muted fw-semibold me-2" style="font-size:13px;"><i class="bi bi-tags"></i> Tags:</span>
+  <div id="tagsList" class="d-flex flex-wrap gap-2"></div>
+  <form onsubmit="addTag(event)" class="d-flex align-items-center ms-auto" style="max-width:200px;">
+    <input type="text" id="tagInput" class="form-control form-control-sm me-2" placeholder="+ Add tag" style="font-size:12px;">
+  </form>
+</div>
+
+<div class="row g-4">
+  <!-- Left side: Preview -->
+  <div class="col-lg-8">
+    <div class="card border-0 shadow-sm rounded-3 h-100" style="min-height:500px; background:#fff;">
+      <div class="card-header bg-white border-bottom p-3 d-flex justify-content-between align-items-center">
+  <span class="fw-semibold"><i class="bi bi-eye me-1"></i> Preview</span>
+  {% if item.item_type == 'file' and not item.is_deleted %}
+    <a href="/preview/{{ item.id }}" target="_blank" class="btn btn-sm btn-outline-primary">
+      <i class="bi bi-box-arrow-up-right"></i> Open Full Screen
+    </a>
+  {% endif %}
+</div>
+      <div class="card-body p-0" style="overflow:hidden; border-radius:0 0 12px 12px;">
+        {% set ext = (item.ext or '').lower() %}
+        {% if item.is_cloud_placeholder %}
+          <div class="alert alert-warning m-4">â˜ï¸ Ye cloud-only file hai. Ise preview karne ke liye Google Drive me download karna padega.</div>
+        {% elif item.is_deleted %}
+          <div class="alert alert-danger m-4">âš ï¸ Ye file disk par nahi mili.</div>
+        {% elif ext in ['jpg','jpeg','png','gif','webp','svg'] %}
+          <img src="/api/preview/{{ item.id }}" class="img-fluid w-100" style="object-fit:contain; max-height:600px;" alt="{{ item.name }}">
+        {% elif ext == 'pdf' %}
+          <iframe src="/api/preview/{{ item.id }}" width="100%" height="600px" style="border:none; border-radius:0 0 12px 12px;"></iframe>
+        {% elif ext in ['txt','md','py','js','html','css','json','csv','log'] %}
+          <iframe src="/api/preview/{{ item.id }}" width="100%" height="600px" style="border:none; border-radius:0 0 12px 12px;"></iframe>
+        {% else %}
+          <div class="d-flex flex-column align-items-center justify-content-center h-100 text-muted p-5">
+            <i class="bi bi-file-earmark-x fs-1 mb-3"></i>
+            <h5>Preview not available</h5>
+            <p class="small text-center">Is file type (.{{ ext }}) ka preview support nahi hai.</p>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Right side: Progress & Notes -->
+  <div class="col-lg-4">
+    <!-- Progress Card -->
+    <div class="card border-0 shadow-sm rounded-3 mb-4 bg-white">
+      <div class="card-header bg-white border-bottom p-3 fw-semibold">
+        <i class="bi bi-check2-circle me-1"></i> Learning Status
+      </div>
+      <div class="card-body p-4">
+        <select id="statusSel" class="form-select mb-3" onchange="saveProgress()">
+          <option value="not_started" {{ 'selected' if status=='not_started' }}>ðŸ”´ Not Started</option>
+          <option value="in_progress" {{ 'selected' if status=='in_progress' }}>ðŸŸ¡ In Progress</option>
+          <option value="completed"   {{ 'selected' if status=='completed' }}>ðŸŸ¢ Completed</option>
+        </select>
+        
+        <button class='btn btn-outline-primary w-100 mb-2' onclick='openFcModal()'><i class='bi bi-plus-circle'></i> Add Flashcard</button>
+        <button class="btn {{ 'btn-warning' if favorite else 'btn-outline-secondary' }} w-100 mb-2" onclick="toggleFav()">
+          {{ 'â˜… Remove Favorite' if favorite else 'â˜† Add Favorite' }}
+        </button>
+        
+        <div id="saveMsg" class="small text-center mt-2 text-success"></div>
+      </div>
+    </div>
+
+    <!-- Notes Card -->
+    <div class="card border-0 shadow-sm rounded-3 bg-white">
+      <div class="card-header bg-white border-bottom p-3 fw-semibold d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-pencil-square me-1"></i> Notes</span>
+        <button class="btn btn-sm btn-primary" onclick="saveNote()">Save</button>
+      </div>
+      <div class="card-body p-0">
+        <textarea id="noteText" class="form-control border-0 shadow-none" rows="8" placeholder="Apne notes yahan likho..." style="resize:none; border-radius:0 0 12px 12px;">{{ note }}</textarea>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Flashcard Modal -->
+<div class="modal fade" id="fcModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow">
+      <div class="modal-header border-bottom-0 pb-0"><h5 class="modal-title fw-bold">Create Flashcard</h5><button class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body">
+        <input type="text" id="fcQ" class="form-control mb-3" placeholder="Question">
+        <textarea id="fcA" class="form-control" rows="3" placeholder="Answer"></textarea>
+      </div>
+      <div class="modal-footer border-top-0">
+        <button class="btn btn-primary w-100" onclick="saveFlashcard()">Save Flashcard</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Floating AI Chat -->
+<button class="btn btn-primary rounded-circle shadow position-fixed" style="bottom:30px; right:30px; width:60px; height:60px; z-index:999;" onclick="toggleAI()">
+  <i class="bi bi-robot fs-3"></i>
+</button>
+
+<div id="aiChat" class="card position-fixed shadow-lg border-0" style="bottom:100px; right:30px; width:350px; display:none; z-index:999; border-radius:16px;">
+  <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center rounded-top" style="border-radius:16px 16px 0 0 !important;">
+    <span><i class="bi bi-robot me-1"></i> AI Study Buddy</span>
+    <button class="btn-close btn-close-white" onclick="toggleAI()"></button>
+  </div>
+  <div class="card-body p-3 bg-light" id="aiMessages" style="height:300px; overflow-y:auto; font-size:13px;">
+    <div class="text-muted text-center mt-5"><i class="bi bi-stars fs-3"></i><br>Ask me anything about this file!</div>
+  </div>
+  <div class="card-footer bg-white p-2 d-flex gap-2" style="border-radius:0 0 16px 16px;">
+    <input type="text" id="aiInput" class="form-control form-control-sm" placeholder="Type question..." onkeyup="if(event.key==='Enter') sendAI()">
+    <button class="btn btn-primary btn-sm" onclick="sendAI()"><i class="bi bi-send"></i></button>
+  </div>
+</div>
+
+<script>
+const ITEM_ID = {{ item.id }};
+const REL_PATH = {{ item.rel_path|tojson }};
+
+async function saveProgress(){
+  const status = document.getElementById('statusSel').value;
+  const percent = status==='completed'?100 : status==='not_started'?0 : 50;
+  const j = await api('/api/progress', {item_id: ITEM_ID, status: status, percent: percent});
+  showMsg(j, 'Progress saved!');
+}
+
+async function saveNote(){
+  const j = await api('/api/note', {item_id: ITEM_ID, note_text: document.getElementById('noteText').value});
+  showMsg(j, 'Notes saved!');
+}
+
+async function toggleFav(){
+  const j = await api('/api/favorite', {item_id: ITEM_ID});
+  if(j) location.reload();
+}
+
+function openExplorer(){ api('/api/open_explorer', {path: REL_PATH}); }
+
+function showMsg(j, ok){
+  const el = document.getElementById('saveMsg');
+  if(!el) return;
+  el.className = j ? 'small text-center mt-2 text-success' : 'small text-center mt-2 text-danger';
+  el.textContent = j ? ok : 'Failed to save';
+  setTimeout(() => el.textContent = '', 2500);
+}
+
+// --- Tags Logic ---
+async function loadTags() {
+  const res = await fetch('/api/tags/' + ITEM_ID);
+  const data = await res.json();
+  const list = document.getElementById('tagsList');
+  list.innerHTML = '';
+  data.tags.forEach(tag => {
+    list.innerHTML += `
+      <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 rounded-pill d-flex align-items-center gap-1 px-2 py-1" style="font-size:12px;">
+        #${tag} <i class="bi bi-x-circle-fill" style="cursor:pointer;" onclick="removeTag('${tag}')"></i>
+      </span>
+    `;
+  });
+}
+
+async function addTag(e) {
+  e.preventDefault();
+  const input = document.getElementById('tagInput');
+  const val = input.value.trim();
+  if(!val) return;
+  await fetch('/api/tags/' + ITEM_ID, {
+    method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({tag_name: val})
+  });
+  input.value = '';
+  loadTags();
+}
+
+async function removeTag(tag) {
+  await fetch('/api/tags/' + ITEM_ID + '/' + tag, {method: 'DELETE'});
+  loadTags();
+}
+
+// --- Time Tracker ---
+let sessionSeconds = 0;
+let lastTick = Date.now();
+setInterval(() => {
+  const now = Date.now();
+  if (document.visibilityState === 'visible') {
+    sessionSeconds += Math.floor((now - lastTick) / 1000);
+  }
+  lastTick = now;
+}, 1000);
+
+async function flushTime() {
+  if (sessionSeconds >= 5) {
+    const secs = sessionSeconds;
+    sessionSeconds = 0;
+    await api('/api/track_time', {item_id: ITEM_ID, seconds: secs});
+  }
+}
+setInterval(flushTime, 30000);
+window.addEventListener('beforeunload', () => {
+  if (sessionSeconds >= 5 && navigator.sendBeacon) {
+    navigator.sendBeacon('/api/track_time', new Blob([JSON.stringify({item_id: ITEM_ID, seconds: sessionSeconds})], {type:'application/json'}));
+  }
+});
+
+// --- Flashcard Logic ---
+function openFcModal(){
+  const m = new bootstrap.Modal(document.getElementById('fcModal'));
+  m.show();
+}
+async function saveFlashcard(){
+  const q = document.getElementById('fcQ').value;
+  const a = document.getElementById('fcA').value;
+  if(!q || !a) return alert('Both fields required');
+  await api('/api/flashcards', {item_id: ITEM_ID, question: q, answer: a});
+  bootstrap.Modal.getInstance(document.getElementById('fcModal')).hide();
+  alert('Flashcard saved!');
+}
+
+// --- AI Chat Logic ---
+function toggleAI(){
+  const c = document.getElementById('aiChat');
+  c.style.display = c.style.display === 'none' ? 'block' : 'none';
+}
+async function sendAI(){
+  const input = document.getElementById('aiInput');
+  const msg = input.value.trim();
+  if(!msg) return;
+  input.value = '';
+  
+  const msgs = document.getElementById('aiMessages');
+  msgs.innerHTML += `<div class="mb-2 text-end"><span class="badge bg-primary text-wrap text-start p-2" style="max-width:90%;">${msg}</span></div>`;
+  msgs.scrollTop = msgs.scrollHeight;
+  
+  const res = await fetch('/api/ai/chat', {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({item_id: ITEM_ID, prompt: msg})
+  }).then(r=>r.json());
+  
+  if(res.ok){
+    msgs.innerHTML += `<div class="mb-2"><span class="badge bg-white text-dark border text-wrap text-start p-2" style="max-width:90%;">${res.response}</span></div>`;
+  } else {
+    msgs.innerHTML += `<div class="mb-2 text-danger small">${res.error}</div>`;
+  }
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+document.addEventListener('DOMContentLoaded', loadTags);
+</script>
+{% endblock %}

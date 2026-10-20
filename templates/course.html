@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block body %}
+<h1>{{ course.name }}</h1>
+<p class="text-secondary small">{{ course.rel_path }}</p>
+
+<div class="row g-3 mb-3">
+  <div class="col-6 col-md-3"><div class="card stat"><div class="stat-num">{{ "%.0f"|format(overall) }}%</div><div class="stat-label">Complete</div></div></div>
+  <div class="col-6 col-md-3"><div class="card stat"><div class="stat-num">{{ statuses.completed }}/{{ total }}</div><div class="stat-label">Done</div></div></div>
+  <div class="col-6 col-md-3"><div class="card stat"><div class="stat-num">{{ statuses.in_progress }}</div><div class="stat-label">In Progress</div></div></div>
+  <div class="col-6 col-md-3"><div class="card stat"><div class="stat-num">{{ statuses.not_started }}</div><div class="stat-label">Not Started</div></div></div>
+</div>
+<div class="progress mb-4"><div class="progress-bar" style="width:{{ overall }}%"></div></div>
+
+{% if children %}
+<table class="table table-hover">
+  <thead><tr><th>Name</th><th>Type</th><th>Status</th><th>%</th></tr></thead>
+  <tbody>
+    {% for c in children %}
+    <tr>
+      <td>
+        {% if c.item_type=='folder' %}<a href="/course/{{ c.id }}">{{ c.name }}</a>
+        {% else %}<a href="/unit/{{ c.id }}">{{ c.name }}</a>{% endif %}
+        {% if c.is_unit %}<span class="badge-unit">unit</span>{% endif %}
+      </td>
+      <td class="small">{{ c.item_type }}</td>
+      <td><span class="badge {{ 'bg-success' if c.status=='completed' else 'bg-warning text-dark' if c.status=='in_progress' else 'bg-secondary' }}">{{ c.status }}</span></td>
+      <td>{{ c.percent }}%</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}<div class="alert alert-info">No modules detected in this course.</div>{% endif %}
+{% endblock %}

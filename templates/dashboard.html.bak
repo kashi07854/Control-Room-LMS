@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% block breadcrumbs %}Workspace / Dashboard{% endblock %}
+{% block body %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h2 class="h4 mb-0 fw-bold">Recent</h2>
+  <div class="d-flex gap-2">
+    <div class="btn-group">
+      <button class="btn btn-light btn-sm active"><i class="bi bi-list-ul"></i> List View</button>
+      <button class="btn btn-light btn-sm"><i class="bi bi-grid"></i> Grid</button>
+    </div>
+  </div>
+</div>
+
+<!-- Folder Cards -->
+<div class="folder-grid mb-5">
+  {% for c in courses[:4] %}
+  <a href="/course/{{ c.id }}" class="folder-card">
+    <div class="folder-icon-wrapper"><i class="bi bi-folder-fill text-warning"></i></div>
+    <div class="folder-info">
+      <div class="folder-name">{{ c.name }}</div>
+      <div class="folder-meta">Course</div>
+    </div>
+  </a>
+  {% endfor %}
+  <div class="folder-card create-new">
+    <i class="bi bi-plus-circle-dotted fs-3 text-muted"></i>
+    <div class="folder-meta mt-2">Create new</div>
+  </div>
+</div>
+
+<!-- Table -->
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h2 class="h5 mb-0 fw-semibold">Recent Files</h2>
+</div>
+<div class="table-container">
+  <table class="table table-hover custom-table align-middle mb-0">
+    <thead>
+      <tr>
+        <th style="width: 40px"><input type="checkbox" class="form-check-input"></th>
+        <th>File Name <i class="bi bi-arrow-down-up text-muted ms-1"></i></th>
+        <th>Date Modified</th>
+        <th>Type</th>
+        <th>Size</th>
+        <th class="text-end">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for r in recent %}
+      <tr>
+        <td><input type="checkbox" class="form-check-input"></td>
+        <td>
+          <div class="d-flex align-items-center gap-2">
+            <i class="bi bi-file-earmark-text text-primary fs-5"></i>
+            <a href="/unit/{{ r.id }}" class="text-dark fw-medium text-decoration-none">{{ r.name }}</a>
+          </div>
+        </td>
+        <td class="text-muted">{{ r.mtime|round|int if r.mtime else '-' }}</td>
+        <td><span class="badge bg-light text-dark border">{{ r.rel_path.split('.')[-1]|upper if '.' in r.rel_path else 'FILE' }}</span></td>
+        <td class="text-muted">-</td>
+        <td class="text-end">
+          <button class="btn btn-sm btn-link text-muted p-1"><i class="bi bi-link-45deg"></i></button>
+          <button class="btn btn-sm btn-link text-muted p-1"><i class="bi bi-three-dots-vertical"></i></button>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}
