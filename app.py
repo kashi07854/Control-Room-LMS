@@ -1,4 +1,4 @@
-﻿"""Control Room - Final Premium Build"""
+"""Control Room - Final Premium Build"""
 import os, sys, json, docx, schedule, threading, time
 import sqlite3, PyPDF2, docx, openpyxl, threading, time, urllib.parse, schedule
 from docx.shared import Pt
@@ -327,11 +327,11 @@ def create_word_report(data, report_type):
     entries = data.get("journal", {}).get("entries", {})
     for date, entry in sorted(entries.items()):
         doc.add_heading(f"Date: {date}", level=1)
-        if entry.get("morning"): doc.add_paragraph(f"🌅 Morning: {entry['morning']}")
-        if entry.get("acc"): doc.add_paragraph(f"🎯 Accomplished: {entry['acc']}")
-        if entry.get("learn"): doc.add_paragraph(f"📚 Learned: {entry['learn']}")
-        if entry.get("evening"): doc.add_paragraph(f"🌙 Evening: {entry['evening']}")
-        if entry.get("notes"): doc.add_paragraph(f"💡 Notes: {entry['notes']}")
+        if entry.get("morning"): doc.add_paragraph(f"?? Morning: {entry['morning']}")
+        if entry.get("acc"): doc.add_paragraph(f"?? Accomplished: {entry['acc']}")
+        if entry.get("learn"): doc.add_paragraph(f"?? Learned: {entry['learn']}")
+        if entry.get("evening"): doc.add_paragraph(f"?? Evening: {entry['evening']}")
+        if entry.get("notes"): doc.add_paragraph(f"?? Notes: {entry['notes']}")
         doc.add_paragraph("-" * 20)
         
     filename = REPORTS_DIR / f"{report_type}_Report_{datetime.now().strftime('%Y-%m-%d')}.docx"
@@ -395,6 +395,7 @@ if __name__ == "__main__":
     init_db()
     threading.Thread(target=scheduled_report_checker, daemon=True).start()
     app.run(host="127.0.0.1", port=5000, debug=False, use_reloader=False)
+
 
 
 
