@@ -2,3 +2,4 @@
 gunicorn
 python-docx
 openpyxl
+schedule
